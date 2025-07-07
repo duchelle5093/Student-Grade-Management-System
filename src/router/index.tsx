@@ -1,5 +1,6 @@
 import {redirect, type RouteObject} from "react-router-dom";
-import {LoginPage} from "../features";
+import {LoginPage, RegisterPage} from "../features";
+import {AuthLayout, DashboardLayout} from "../layouts";
 
 export const routes:RouteObject[] = [
     {
@@ -10,7 +11,27 @@ export const routes:RouteObject[] = [
     },
     {
         path: '/auth',
-        element:<LoginPage/>
+        element:<AuthLayout/>,
+        children: [
+            {
+                path: '',
+                loader() {
+                    return redirect('login');
+                },
+            },
+            {
+                path: 'login',
+                element: <LoginPage />,
+            },
+            {
+                path:'register',
+                element:<RegisterPage/>
+            }
+        ]
+    },
+    {
+        path: '/dashboard',
+        element:<DashboardLayout/>
     }
 ]
 

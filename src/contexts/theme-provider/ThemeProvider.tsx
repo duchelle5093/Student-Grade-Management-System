@@ -12,12 +12,14 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
             theme={{
                 components: {
                     Notification: {
-                        colorPrimary: ColorTheme.SECONDARY,
+                        colorPrimary: ColorTheme.PRIMARY,
                     },
                     Button: {
                         defaultHoverBg: ColorTheme.SECONDARY,
                         defaultHoverColor: 'white',
                         defaultHoverBorderColor: 'transparent',
+                        defaultBg: ColorTheme.PRIMARY,
+                        defaultColor:'white'
                     },
                     Input:{
                         activeBorderColor: 'transparent',
