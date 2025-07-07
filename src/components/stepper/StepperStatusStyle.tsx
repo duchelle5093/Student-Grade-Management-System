@@ -13,9 +13,7 @@ export const StepStatusStyle = ({
                                 }: StepStatusStyleProps) => {
     return (
         <>
-            <div
-                className={`w-full h-[2px] ${className} rounded-lg mr-2 mb-1 transition-all duration-300 `}
-            ></div>
+            <div className={`w-full h-[2px] ${className} rounded-lg mr-2 mb-1 transition-all duration-300 `}/>
             <div className={`${textStyle}`}>{label}</div>
         </>
     );

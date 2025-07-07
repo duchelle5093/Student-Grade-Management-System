@@ -1,9 +1,10 @@
 import {AxiosInstance} from 'axios';
-import {LoginreqDto} from "../request-dto/auth.req.ts";
+import {LoginreqDto, RegisterReqDto} from "../request-dto/auth.req.ts";
 import {LoginResDto} from "../reponse-dto/auth.res.dto.ts";
 
 const authApis = {
-   LOGIN: 'auth/login'
+   LOGIN: 'auth/login',
+    REGISTER : 'auth/register'
 };
 
 export class AuthService {
@@ -17,6 +18,15 @@ export class AuthService {
             authApis.LOGIN,
             req
         );
+        return response.data;
+    }
+
+    async register(req:RegisterReqDto){
+        const response = await this._client.post<RegisterReqDto>(
+            authApis.REGISTER,
+            req
+        )
+
         return response.data;
     }
 }

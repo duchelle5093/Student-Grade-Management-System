@@ -1,6 +1,6 @@
 import {Form} from "antd";
 
-export const RegisterForm =()=>{
+export const PersonalInfoForm =()=>{
     return (
         <Form></Form>
     )
