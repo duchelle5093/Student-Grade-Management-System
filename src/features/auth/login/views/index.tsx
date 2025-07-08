@@ -4,6 +4,8 @@ import {AppButton} from "../../../../components/AppButton.tsx";
 import {processLogin} from "../../actions.ts";
 import {useState} from "react";
 import {useAppDispatch} from "../../../../store";
+import {useNavigate} from "react-router";
+import {useNotification} from "../../../../contexts";
 
 export const LoginForm = ()=>{
 
@@ -15,6 +17,8 @@ export const LoginForm = ()=>{
     };
 
     const [isProcessing, setIsProcessing] = useState(false);
+    const navigate = useNavigate()
+    const {notify} = useNotification()
 
     const onFinish = async ({
                                 username,
@@ -30,6 +34,12 @@ export const LoginForm = ()=>{
             })
         );
         setIsProcessing(false);
+        notify({
+            type: 'success',
+            message: "Success",
+            description:'Connexion reussie!'
+        })
+        navigate('/dashboard')
     };
 
 

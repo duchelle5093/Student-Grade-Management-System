@@ -1,6 +1,6 @@
 import { ReactNode, useContext } from 'react';
 import { StepperContext } from '../../contexts';
-import { StepStatusStyle } from './StepStatusStyle';
+import {StepStatusStyle} from "./StepperStatusStyle.tsx";
 
 export interface StepItem {
     label: string;

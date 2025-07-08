@@ -9,7 +9,7 @@ export type PersonalInfoDataType = {
 };
 
 export type IdentificationInfoDataType = {
-    username: number;
+    username: string;
     email: string;
     password: string;
 };
@@ -24,14 +24,15 @@ export type RegisterProps = {
 
 
 type RegisterContextType = {
-    role: Role | null;
+    role: Role | null ;
+    setRole: (role: Role ) => void;
     personalInfo: PersonalInfoDataType;
     setPersonalInfo: (personalInfoData: PersonalInfoDataType) => void;
     identificationInfo: IdentificationInfoDataType;
     setIdentificationInfo: (
         identificationInfo: IdentificationInfoDataType
     ) => void;
-    register: (data?: RegisterProps) => void;
+    register: (data?: { role: Role | null | undefined }) => void;
     isRegisterLoading: boolean;
     isRegisterSuccess: boolean;
     resetForm: () => void;
@@ -40,5 +41,5 @@ type RegisterContextType = {
 export const RegisterContext = createContext<
     Partial<RegisterContextType>
 >({
-    role: null,
+    role : null,
 });

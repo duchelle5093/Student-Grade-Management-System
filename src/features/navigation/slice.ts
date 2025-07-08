@@ -20,3 +20,5 @@ const slice = createSlice({
 
 export const navigationReducer = slice.reducer
 export const { navigateTo  } = slice.actions
+
+

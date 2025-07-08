@@ -1,7 +1,8 @@
-import {StepItem} from "../../../../components";
+import {StepItem, Stepper} from "../../../../components";
 import {PersonalInfoForm} from "./PersonalInfoForm.tsx";
 import {RoleSelectionView} from "./RoleSelection.tsx";
 import {IdentificationForm} from "./IdentificationForm.tsx";
+import {StepperProvider} from "../../../../contexts";
 
 
 type RegisterStepperProps = {
@@ -26,15 +27,15 @@ export const RegisterStepper = ({ isHorizontal }: RegisterStepperProps) => {
 
 
     return (
-        <section className="mt-4">
+        <section>
             <StepperProvider>
                 <Stepper
                     horizontal={isHorizontal}
                     stepItems={stepItemsBase}
                 >
                     {(currentStepIndex) => (
-                        <div className={`${!isSelfRegistration && 'lg:ml-24'}`}>
-                            {steps[currentStepIndex].content}
+                        <div>
+                            {stepItemsBase[currentStepIndex].content}
                         </div>
                     )}
                 </Stepper>

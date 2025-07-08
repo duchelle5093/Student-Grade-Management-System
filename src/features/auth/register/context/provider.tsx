@@ -23,7 +23,6 @@ export const RegisterCtxProvider = ({
         () => {
             const personalInfoPayload: PersonalInfoDataType = {
                 ...(personalInfo as PersonalInfoDataType),
-                phone: `${personalInfo?.phone}`,
             };
 
             const identificationInfoPayload: IdentificationInfoDataType = {
@@ -54,6 +53,7 @@ export const RegisterCtxProvider = ({
     const contextValue = useMemo(
         () => ({
             role,
+            setRole,
             personalInfo,
             setPersonalInfo,
             identificationInfo,
@@ -68,6 +68,8 @@ export const RegisterCtxProvider = ({
             identificationInfo,
             isLoading,
             isSuccess,
+            register,
+            role
         ]
     );
 
