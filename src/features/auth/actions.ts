@@ -5,6 +5,7 @@ import {LoginreqDto} from "../../api/request-dto/auth.req.ts";
 import {clearTokens, setTokens} from "../../api/services/token.service.ts";
 import {authService} from "../../api/configs";
 import {handleAsyncThunk} from "../../utils/handleAsyncThunk.ts";
+import {triggerClientNotification} from "../../contexts";
 
 
 
@@ -21,6 +22,11 @@ export const processLogin = createAsyncThunk(
                 token: res.token,
             });
             dispatch(markAsAuthenticated());
+            dispatch(triggerClientNotification({
+               type: 'success',
+               message: "Success",
+               description:'Connexion reussie!'
+            }))
             dispatch(navigateTo('/dashboard'));
             return res;
         }, rejectWithValue);

@@ -8,7 +8,7 @@ const initialState: NavigationSliceState = {
     path: null
 }
 
-const slice = createSlice({
+const navigationSlice = createSlice({
     name: "navigation",
     initialState,
     reducers: {
@@ -18,7 +18,5 @@ const slice = createSlice({
     }
 })
 
-export const navigationReducer = slice.reducer
-export const { navigateTo  } = slice.actions
-
-
+export const navigationReducer = navigationSlice.reducer
+export const { navigateTo  } = navigationSlice.actions

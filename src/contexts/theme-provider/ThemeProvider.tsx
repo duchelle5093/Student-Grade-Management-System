@@ -14,6 +14,10 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
                     Notification: {
                         colorPrimary: ColorTheme.PRIMARY,
                     },
+                    DatePicker:{
+                        activeBorderColor: 'transparent',
+                        hoverBorderColor: ' border-gray-300',
+                    },
                     Button: {
                         defaultHoverBg: ColorTheme.SECONDARY,
                         defaultHoverColor: 'white',

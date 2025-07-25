@@ -1,4 +1,4 @@
-import {Form, Input} from "antd";
+import {DatePicker, Form, Input} from "antd";
 import {AppButton} from "../../../../components";
 import {useContext} from "react";
 import {StepperContext} from "../../../../contexts";
@@ -14,7 +14,9 @@ export const PersonalInfoForm =()=>{
         const payload: PersonalInfoDataType = {
             firstName : values.firstName,
             lastName: values.lastName,
-            phone: values.phone
+            phone: values.phone,
+            dateOfBirth: values.dateOfBirth,
+            placeOfBirth: values.placeOfBirth,
         }
         setPersonalInfo?.(payload)
         handleNext?.()
@@ -33,7 +35,7 @@ export const PersonalInfoForm =()=>{
                     },
                 ]}
             >
-                <Input size={'large'} placeholder='Entrez votre nom'/>
+                <Input size={'large'}  placeholder='Entrez votre nom'/>
             </Form.Item>
             <Form.Item
                 name="lastName"
@@ -45,7 +47,7 @@ export const PersonalInfoForm =()=>{
                     },
                 ]}
             >
-                <Input size={'large'} placeholder='Entrez votre prenom'/>
+                <Input size={'large'}  placeholder='Entrez votre prenom'/>
             </Form.Item>
             <Form.Item
                 name="phone"
@@ -57,6 +59,32 @@ export const PersonalInfoForm =()=>{
                 ]}
             >
                 <Input size={'large'} placeholder='Entrez votre numero de telephone'/>
+            </Form.Item>
+            <Form.Item
+                name="dateOfBirth"
+                rules={[
+                    {
+                        required: true,
+                        message: 'Champ obligatoire',
+                    },
+                ]}
+            >
+                <DatePicker
+                    size="large"
+                    placeholder={'Entez votre date de naissance'}
+                    className={'w-full'}
+                />
+            </Form.Item>
+            <Form.Item
+                name="placeOfBirth"
+                rules={[
+                    {
+                        required: true,
+                        message: 'Champ obligatoire',
+                    },
+                ]}
+            >
+                <Input size={'large'}  placeholder='Entrez votre lieu de naissance'/>
             </Form.Item>
             <div className={'w-full flex justify-between gap-10 mt-10'}>
                 <AppButton

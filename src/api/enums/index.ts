@@ -5,6 +5,6 @@ export enum Role {
 }
 
 export enum ColorTheme {
-    PRIMARY = '#9F9FFF',
-    SECONDARY = '#a6a3e1',
+    PRIMARY = '#6EADFF',
+    SECONDARY = '#a6a3e1#a6a3e1',
 }

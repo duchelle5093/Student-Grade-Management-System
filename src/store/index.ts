@@ -1,14 +1,18 @@
 import {Action, combineReducers, configureStore} from "@reduxjs/toolkit";
+import {navigationReducer} from "../features/navigation";
 import {authReducer} from "../features/auth/slice.ts";
 import {TypedUseSelectorHook, useDispatch, useSelector} from "react-redux";
 import {notificationReducer} from "../contexts";
-import {navigationReducer} from "../features";
+import { userReducer } from "../features/user/slices.ts";
+
 
 
 const combinedReducer = combineReducers({
-    auth: authReducer,
     navigation : navigationReducer,
+    auth: authReducer,
     notification: notificationReducer,
+    user : userReducer
+
 })
 
 const rootReducer = (state, action: Action) => {

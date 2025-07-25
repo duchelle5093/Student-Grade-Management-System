@@ -1,9 +1,91 @@
 @import  'tailwindcss';
 
 @theme {
-    --color-primary: #9F9FFF;
+    --color-primary: #6EADFF;
     --color-secondary: #a6a3e1;
+    --color-tertiary: #e1e1f6;
     --color-bgColor: #FEFFEF;
 }
+
+.dashboard-layout {
+    @apply h-screen grid lg:grid-cols-[auto_1fr] w-screen
+
+   
+}
+
+ .__main {
+    @apply shadow-xl
+     overflow-hidden duration-300 ease-in-out transition-all
+ }
+
+.sidebar-nav-item {
+    transition: all 0.1s linear;
+    position: relative;
+    border: none;
+    @apply grid grid-cols-[65px_1fr_auto] h-[50px]
+    items-center opacity-60 hover:opacity-100
+}
+
+
+.sidebar-nav-item::after {
+    content: '';
+    transition: all 0.1s ease-in-out;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background-color: #000;
+    transform: translateX(-100%);
+
+    @apply bg-transparent rounded-e-full my-3;
+}
+
+
+.sidebar-nav-item.active::after {
+    transform: translateX(0);
+    @apply bg-gray-800
+}
+
+.sidebar-nav-sub-item {
+  position: relative;
+  transition: all 0.1s linear;
+  @apply opacity-60
+ 
+}
+
+/* .sidebar-nav-sub-item::after {
+  content: '';
+  transition: all 0.2s linear;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  @apply bg-slate-200
+  dark:bg-slate-400/20;
+}
+
+.sidebar-nav-sub-item:hover {
+  @apply opacity-80 text-black;
+}
+
+.sidebar-nav-sub-item.active {
+  @apply opacity-100 font-semibold
+  dark:bg-slate-400/20 dark:text-slate-200;
+}
+
+.sidebar-nav-sub-item.active::after {
+  width: 2px;
+  @apply bg-slate-500
+  dark:bg-slate-200;
+} */
+
+
+
+
+
+
+
 
 

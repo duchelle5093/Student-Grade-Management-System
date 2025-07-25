@@ -1,15 +1,16 @@
 import {Form, Input} from "antd";
-import {PasswordInputFormItem} from "../../../../components/PasswordInputField.tsx";
-import {AppButton} from "../../../../components/AppButton.tsx";
+import {AppButton, PasswordInputFormItem} from "../../../../components";
 import {processLogin} from "../../actions.ts";
 import {useState} from "react";
 import {useAppDispatch} from "../../../../store";
-import {useNavigate} from "react-router";
-import {useNotification} from "../../../../contexts";
+import { useNavigate } from "react-router";
+
 
 export const LoginForm = ()=>{
 
     const dispatch = useAppDispatch();
+
+    const navigate = useNavigate();
 
     type SubmissionForm = {
         username: string;
@@ -17,8 +18,6 @@ export const LoginForm = ()=>{
     };
 
     const [isProcessing, setIsProcessing] = useState(false);
-    const navigate = useNavigate()
-    const {notify} = useNotification()
 
     const onFinish = async ({
                                 username,
@@ -33,13 +32,8 @@ export const LoginForm = ()=>{
                 },
             })
         );
-        setIsProcessing(false);
-        notify({
-            type: 'success',
-            message: "Success",
-            description:'Connexion reussie!'
-        })
-        navigate('/dashboard')
+        setIsProcessing(false)
+        navigate('/dashboard');
     };
 
 

@@ -2,6 +2,7 @@ import axios, {AxiosError, InternalAxiosRequestConfig} from 'axios';
 import {AuthService} from "../services/auth.service.ts";
 import {store} from "../../store";
 import {triggerClientNotification, triggerServerNotification} from "../../contexts";
+import { UserService } from '../services/user.service.ts';
 
 
 const apiGatewayClient = axios.create({
@@ -36,7 +37,7 @@ apiGatewayClient.interceptors.response.use(
                 triggerClientNotification({
                     message: 'error',
                     type: 'error',
-                    description: 'network.error',
+                    description: 'Network error',
                 })
             );
         } // Send by client
@@ -66,7 +67,7 @@ apiGatewayClient.interceptors.response.use(
                 triggerClientNotification({
                     message: 'error',
                     type: 'error',
-                    description: 'something.went.wrong',
+                    description: 'something went wrong',
                 })
             ); // Send by client
         } // Send by client
@@ -78,3 +79,4 @@ apiGatewayClient.interceptors.response.use(
 
 
 export const authService = new AuthService(apiGatewayClient);
+export const userService = new UserService(apiGatewayClient);

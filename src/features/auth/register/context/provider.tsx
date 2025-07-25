@@ -1,6 +1,6 @@
 import {ReactNode, useCallback, useMemo, useState} from "react";
 import {Role} from "../../../../api/enums";
-import {IdentificationInfoDataType, PersonalInfoDataType, RegisterContext} from "./context.ts";
+import {IdentificationInfoDataType, PersonalInfoDataType, RegisterContext, RegisterProps} from "./context.ts";
 import {useRegisterMutation} from "../api/register.api.slice.ts";
 
 
@@ -29,7 +29,7 @@ export const RegisterCtxProvider = ({
                 ...(identificationInfo as IdentificationInfoDataType),
             };
 
-            const payload = {
+            const payload  = {
                 ...personalInfoPayload,
                 ...identificationInfoPayload,
                 role,

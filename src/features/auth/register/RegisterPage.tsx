@@ -6,7 +6,7 @@ export const RegisterPage = ()=>{
     return (
         <RegisterCtxProvider>
             <div>
-                <p className={'text-center text-2xl mb-10'}>Inscrivez-vous!</p>
+                <p className={'text-center text-2xl mb-3'}>Inscrivez-vous!</p>
                 <RegisterStepper isHorizontal/>
             </div>
             <div className={'flex items-center justify-between text-gray-400 '}>

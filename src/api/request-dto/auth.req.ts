@@ -13,5 +13,7 @@ export interface RegisterReqDto {
     lastName: string;
     phone: string;
     role: Role ;
+    registrationKey: string;
+    level : string;
 }
 
