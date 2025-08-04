@@ -5,7 +5,8 @@ export type Period = 's1' | 's2'
 export interface Topic{
     code: string;
     title: string;
-    grade: number | null; // Note associée au sujet, peut être null si pas de note
+    cc: number | null; // Note de contrôle continu sur 30
+    sn: number | null; // Note de synthèse sur 30
     semester: Period; // Semestre auquel le sujet est associé
     
 }

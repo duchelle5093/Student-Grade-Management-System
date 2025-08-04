@@ -6,6 +6,7 @@ import { useState, useMemo } from "react";
 // import { useAppDispatch, useAppSelector } from "../../../store";
 import { studentResDto } from "../../../api/reponse-dto/user.res.dto";
 import { FakeStudents } from "../../user/data";
+import { EmptyGrade } from "../../../components/EmptyGrade";
 
 export const Licence1 = () => {
   //const students = useAppSelector(state => state.user.students);
@@ -27,11 +28,11 @@ export const Licence1 = () => {
     extraColumns = [];
   }
 
-  const [tableData, setTableData] = useState<studentResDto[]>(FakeStudents);
+  const [dataTable, setDataTable] = useState<studentResDto[]>(FakeStudents);
 
 
   const handleEdit = () => {
-    setEditedData(tableData);
+    setEditedData(dataTable);
     setIsTableEditable(true);
   };
 
@@ -41,43 +42,58 @@ export const Licence1 = () => {
 
   // Fonction pour GradesHeader (sans argument)
   const handleConfirm = () => {
-    setTableData(editedData);
+    setDataTable(editedData);
     setIsTableEditable(false);
   };
 
   const filteredTableData = useMemo(() => {
-    const base = isTableEditable ? editedData : tableData;
+    const base = isTableEditable ? editedData : dataTable;
     if (!searchValue) return base;
     return base.filter((student) =>
       (student.firstName || "")
         .toLowerCase()
         .includes(searchValue.toLowerCase())
     );
-  }, [searchValue, tableData, editedData, isTableEditable]);
+  }, [searchValue, dataTable, editedData, isTableEditable]);
+
+  // Détermine si au moins une note a été attribuée à un étudiant
+  const gradeFields = ["cc1", "sn1", "cc2","sn2"];
+  const hasAtLeastOneGrade = dataTable.some(student =>
+    gradeFields.some(field => {
+      const value = student[field];
+      return value !== undefined && value !== null && value !== '';
+    })
+  );
+
+  const [showTable , setShowTable] = useState(false)
 
   return (
     <div>
       <GradesHeader
         title="L1"
-        period={"Controle continu #1"}
+        period={'Controle continu #1'}
         topic="Mathematiques appliquees"
         code="MATH101"
         level="Licence 1"
         NC="10"
         CANT="20"
-      />
+      /> 
       <div className="mt-8">
-        <EditableGradesTable
-          extraColumns={extraColumns}
-          isEditable={isTableEditable}
-          data={filteredTableData}
-          onGradesChange={setEditedData}
-          onEdit={handleEdit}
-          onConfirm={handleConfirm}
-          isDataEditable={isTableEditable}
-          setIsDataEditable={setIsTableEditable}
-          onSearch={setSearchValue}
-        />
+        {hasAtLeastOneGrade || showTable ? (
+          <EditableGradesTable
+            extraColumns={extraColumns}
+            isEditable={isTableEditable}
+            data={filteredTableData}
+            onGradesChange={setEditedData}
+            onEdit={handleEdit}
+            onConfirm={handleConfirm}
+            isDataEditable={isTableEditable}
+            setIsDataEditable={setIsTableEditable}
+            onSearch={setSearchValue}
+          />
+        ) : (
+          <EmptyGrade setShowTable={setShowTable}/>
+        )}
       </div>
     </div>
   );

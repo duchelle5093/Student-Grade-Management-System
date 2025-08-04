@@ -1,11 +1,25 @@
-
 import { GradesHeader } from "../../../components/LicenceHeader";
 import { usePageTitle } from "../../../hooks/usePageTitle";
-import { EditableGradesTable, Student } from "../../../components/EditableGradesTable";
-  import { useState, useMemo, useEffect } from "react";
+import { EditableGradesTable } from "../../../components/EditableGradesTable";
+import { useState, useMemo } from "react";
+// import { fetchStudents } from "../../user/actions";
+// import { useAppDispatch, useAppSelector } from "../../../store";
+import { studentResDto } from "../../../api/reponse-dto/user.res.dto";
+import { FakeStudents } from "../../user/data";
+import { EmptyGrade } from "../../../components/EmptyGrade";
 
 export const Master2 = () => {
-  usePageTitle("PV Master 2");
+  //const students = useAppSelector(state => state.user.students);
+
+  const [isTableEditable, setIsTableEditable] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+  const [editedData, setEditedData] = useState<studentResDto[]>(FakeStudents);
+
+  usePageTitle(
+    isTableEditable ? "Edition des notes de Master 2" : "Notes de Master 2"
+  );
+
+  //const dispatch = useAppDispatch();
 
   // Colonnes dynamiques selon la période (exemple)
   const period = "2023-2024";
@@ -14,40 +28,44 @@ export const Master2 = () => {
     extraColumns = [];
   }
 
-  const [isTableEditable, setIsTableEditable] = useState(false);
-  const [tableData, setTableData] = useState<Student[]>(() => {
-    const saved = localStorage.getItem('master2_tableData');
-    if (saved) return JSON.parse(saved);
-    // ...génération par défaut...
-});
-  const [searchValue, setSearchValue] = useState("");
-  const [editedData, setEditedData] = useState<Student[]>(tableData);
+  const [dataTable, setDataTable] = useState<studentResDto[]>(FakeStudents);
 
-  // Synchronise editedData avec tableData à chaque changement de tableData ou d'entrée en mode édition
-  useEffect(() => {
-    if (isTableEditable) {
-      setEditedData(tableData);
-    }
-  }, [isTableEditable, tableData]);
 
   const handleEdit = () => {
-    setEditedData(tableData);
+    setEditedData(dataTable);
     setIsTableEditable(true);
   };
+
+  // useEffect(() => {
+  //   dispatch(fetchStudents());
+  // }, [dispatch]);
+
   // Fonction pour GradesHeader (sans argument)
- const handleConfirm = () => {
-  setTableData(editedData);
-  setIsTableEditable(false);
-  localStorage.setItem('master2_tableData', JSON.stringify(editedData));
-};
+  const handleConfirm = () => {
+    setDataTable(editedData);
+    setIsTableEditable(false);
+  };
 
   const filteredTableData = useMemo(() => {
-    const base = isTableEditable ? editedData : tableData;
+    const base = isTableEditable ? editedData : dataTable;
     if (!searchValue) return base;
-    return base.filter(student =>
-      (student.firstName || "").toLowerCase().includes(searchValue.toLowerCase())
+    return base.filter((student) =>
+      (student.firstName || "")
+        .toLowerCase()
+        .includes(searchValue.toLowerCase())
     );
-  }, [searchValue, tableData, editedData, isTableEditable]);
+  }, [searchValue, dataTable, editedData, isTableEditable]);
+
+  // Détermine si au moins une note a été attribuée à un étudiant
+  const gradeFields = ["cc1", "sn1", "cc2","sn2"];
+  const hasAtLeastOneGrade = dataTable.some(student =>
+    gradeFields.some(field => {
+      const value = student[field];
+      return value !== undefined && value !== null && value !== '';
+    })
+  );
+
+  const [showTable , setShowTable] = useState(false)
 
   return (
     <div>
@@ -55,33 +73,31 @@ export const Master2 = () => {
         title="M2"
         period={'Controle continu #1'}
         topic="Mathematiques appliquees"
-        code="MATH401"
-        level="Licence 1"
+        code="MATH402"
+        level="Master 2"
         NC="10"
         CANT="20"
-        totalStudents={30}
-       
-      />
+      /> 
       <div className="mt-8">
-        <EditableGradesTable
-          extraColumns={extraColumns}
-          isEditable={isTableEditable}
-          // onEdit={handleEdit}
-          // onConfirm={handleConfirm}
-          totalStudents={30}
-          data={filteredTableData}
-          onGradesChange={setEditedData}
-           onEdit={handleEdit}
-        onConfirm={handleConfirm}
-        isDataEditable={isTableEditable}
-        setIsDataEditable={setIsTableEditable}
-        onSearch={setSearchValue}
-        />
+        {hasAtLeastOneGrade || showTable ? (
+          <EditableGradesTable
+            extraColumns={extraColumns}
+            isEditable={isTableEditable}
+            data={filteredTableData}
+            onGradesChange={setEditedData}
+            onEdit={handleEdit}
+            onConfirm={handleConfirm}
+            isDataEditable={isTableEditable}
+            setIsDataEditable={setIsTableEditable}
+            onSearch={setSearchValue}
+          />
+        ) : (
+          <EmptyGrade setShowTable={setShowTable}/>
+        )}
       </div>
     </div>
   );
 };
-
 
 // // ...existing code...
 

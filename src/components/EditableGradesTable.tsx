@@ -94,24 +94,6 @@ export const EditableGradesTable = ({
       sorter: (a: studentResDto, b: studentResDto) => Number(a.cc1 || 0) - Number(b.cc1 || 0),
     },
     {
-      title: "TP",
-      dataIndex: "tp",
-      render: (text: string) => text,
-      sorter: (a: studentResDto, b: studentResDto) => Number(a.tp || 0) - Number(b.tp || 0),
-      // isEditable ? (
-      //   <Input
-      //     value={editingData[idx].tp}
-      //     onChange={e => {
-      //       const newData = [...editingData];
-      //       newData[idx].tp = e.target.value;
-      //       setEditingData(newData);
-      //     }}
-      //   />
-      // ) : (
-      //   text
-      // ),
-    },
-    {
       title: "SN#1",
       dataIndex: "sn1",
       render: (text: string) => text,
@@ -146,12 +128,6 @@ export const EditableGradesTable = ({
       // ) : (
       //   text
       // ),
-    },
-    {
-      title: "TP#2",
-      dataIndex: "tp2",
-      render: (text: string) => text,
-      sorter: (a: studentResDto, b: studentResDto) => Number(a.tp2 || 0) - Number(b.tp2 || 0),
     },
     {
       title: "SN#2",
