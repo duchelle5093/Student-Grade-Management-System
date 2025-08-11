@@ -21,7 +21,7 @@ const slice = createSlice({
     loadStudents(state, action: PayloadAction<studentResDto[]>) {
       state.students = action.payload;
     },
-  },
+  }
 });
 
 export const userReducer = slice.reducer;

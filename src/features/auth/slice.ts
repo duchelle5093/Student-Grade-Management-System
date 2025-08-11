@@ -1,13 +1,17 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { LoginResDto } from '../../api/reponse-dto/auth.res.dto';
+import { processLogin } from './actions';
 
 interface AuthSliceState{
     isAuthenticated: boolean | null,
     tokenExpiresIn: number
+    userInfo : LoginResDto
 }
 
 const initialState: AuthSliceState = {
     isAuthenticated: null,
-    tokenExpiresIn: 120
+    tokenExpiresIn: 120,
+    userInfo: {} as LoginResDto
 }
 
 const slice = createSlice({
@@ -20,8 +24,15 @@ const slice = createSlice({
         markAsUnauthenticated(state){
             state.isAuthenticated = false
         },
+    },
 
-    }
+     extraReducers: (builder) => {
+        builder
+          .addCase(processLogin.fulfilled, (state, action) => {
+            state.userInfo = action.payload
+          })
+        },
+    
 })
 
 export const authReducer = slice.reducer

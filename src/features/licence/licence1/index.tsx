@@ -99,7 +99,7 @@ export const Licence1 = () => {
   );
 };
 
-// // ...existing code...
+
 
 // const handleConfirm = async (data: Student[]) => {
 //   setTableData(data);
