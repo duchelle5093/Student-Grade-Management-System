@@ -5,7 +5,16 @@ import {
 } from '@ant-design/icons';
 import {Form, Input} from 'antd';
 
-export const PasswordInputFormItem = () => {
+
+
+interface PasswordInputFormItemProps {
+    name?: string;
+    placeholder?: string;
+}
+
+
+
+export const PasswordInputFormItem = ({name , placeholder }:PasswordInputFormItemProps) => {
     const [showPassword, setShowPassword] = useState(false);
 
     const handlePwdVisibility = () => {
@@ -14,7 +23,7 @@ export const PasswordInputFormItem = () => {
 
     return (
         <Form.Item
-            name='password'
+            name={name ? name : 'password'}
             rules={[
                 {
                     required: true,
@@ -38,7 +47,7 @@ export const PasswordInputFormItem = () => {
                     )
                 }
                 type={showPassword ? 'text' : 'password'}
-                placeholder='Entrez votre mot de passe'
+                placeholder={placeholder ? placeholder : 'Mot de passe'}
             />
         </Form.Item>
     );

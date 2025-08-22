@@ -11,3 +11,10 @@ export interface LoginResDto{
     authorities: [],
     mustChangePassword: boolean
 }
+
+export interface ChangePasswordReqDto{
+   currentPassword: string;
+   newPassword: string ;
+   confirmPassword: string;
+   oldPassword: string
+}

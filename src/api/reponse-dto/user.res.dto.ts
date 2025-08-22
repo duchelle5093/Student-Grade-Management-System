@@ -1,31 +1,23 @@
+import {StudentTopicResDto} from "./student.res.dto.ts";
+import {Role} from "../enums";
 
-export type Period = 's1' | 's2'
-
-
-export interface Topic{
-    code: string;
-    title: string;
-    cc: number | null; // Note de contrôle continu sur 30
-    sn: number | null; // Note de synthèse sur 30
-    semester: Period; // Semestre auquel le sujet est associé
-    
-}
-
-// export interface Grade{
-//     id: number;
-//     studentId: number;
-//     topicCode: string;
-//     value: number;
-//     date: string; // Date au format ISO
-// }
-
-export interface userProfileResDto {
+export interface userProfileResDto extends StudentTopicResDto{
     id: number;
     firstName: string;
     lastName: string;
     email: string;
     username: string;
     role: string;
+    level: string[];
+}
+
+interface Topic {
+    code: string,
+    title: string,
+    cc: number,
+    sn: number,
+    semester: string,
+    credits:number
 }
 
 export interface studentResDto {
@@ -35,8 +27,8 @@ export interface studentResDto {
     email: string;
     username: string;
     role: string;
+    level: string;
     topics: Topic[];
-    [key: string]: string | number | Topic[] ; // Permet d'ajouter dynamiquement des propriétés
+    [index: string]: any
 }
-
 

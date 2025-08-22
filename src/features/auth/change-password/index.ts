@@ -1,0 +1,1 @@
+export * from './ChangePwdPage.tsx';

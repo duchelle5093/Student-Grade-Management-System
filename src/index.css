@@ -1,9 +1,11 @@
 @import  'tailwindcss';
 
+body {
+    overflow-x: hidden
+}
 @theme {
     --color-primary: #6EADFF;
-    --color-secondary: #6EADFF;
-    --color-tertiary: #e1e1f6;
+    --color-secondary: #afd0fa;
     --color-bgColor: #FEFFEF;
 }
 
@@ -11,6 +13,10 @@
     @apply h-screen grid lg:grid-cols-[auto_1fr] w-screen
 
    
+}
+
+.mobile-drawer {
+    @apply grid grid-rows-[auto_1fr_auto] overflow-hidden
 }
 
  .__main {

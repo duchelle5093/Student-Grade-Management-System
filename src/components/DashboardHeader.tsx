@@ -7,6 +7,9 @@ import back from "../images/back.png";
 import UserIcon from "@heroicons/react/24/solid/esm/UserIcon";
 import { store } from "../store";
 import { Link, useLocation } from "react-router";
+import {hasPermission} from "../utils";
+import {Role} from "../api/enums";
+import {ChevronLeftIcon, ChevronRightIcon} from "@heroicons/react/24/solid";
 
 interface Props {
   useAppSelector: (state: any) => any;
@@ -56,24 +59,27 @@ export const DashboardHeader = ({ onDisconnect: disconnect }: Props) => {
         "h-[50px] bg-inherit border-b border-gray-200 flex justify-between items-center px-4 bg-primary"
       }
     >
-      <div className="flex items-center gap-2">
-        <Button
-          onClick={() => toggleSidebar?.()}
-          type="text"
-          shape="circle"
-          className={
-            "bg-slate-100 dark:bg-primary dark:text-slate-100 text-slate-500 hover:text-slate-600"
-          }
-          icon={
-            isSidebarOpen ? (
-              <img src={back} alt={"back"} width={15} />
-            ) : (
-              <img src={next} alt={"next"} width={15} />
-            )
-          }
-        />
-        <Breadcrumb items={BItems} separator=">" />
-      </div>
+      {hasPermission([Role.TEACHER, Role.ADMIN]) && (
+          <div className="flex items-center gap-2">
+            <Button
+                onClick={() => toggleSidebar?.()}
+                type="text"
+                shape="circle"
+                className={
+                  "bg-slate-100 dark:bg-primary dark:text-slate-100 text-slate-500 hover:text-slate-600"
+                }
+                icon={
+                  isSidebarOpen ? (
+                      <ChevronLeftIcon width={20} />
+                  ) : (
+                      <ChevronRightIcon width={20} />
+                  )
+                }
+            />
+            <Breadcrumb items={BItems} separator=">" />
+          </div>
+          )
+      }
       <div>
         <h2
           className={
@@ -93,7 +99,7 @@ export const DashboardHeader = ({ onDisconnect: disconnect }: Props) => {
         >
           <Button type="default" shape="circle">
             <Badge count={2} size="small">
-              <UserIcon width={24} className="text-gray-500" />
+              <UserIcon width={24} className="text-white" />
             </Badge>
           </Button>
         </Dropdown>

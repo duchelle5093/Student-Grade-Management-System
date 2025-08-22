@@ -8,13 +8,15 @@ export const FakeStudents: studentResDto[] = [
     email: "alice.martin@example.com",
     username: "alice.martin",
     role: "STUDENT",
+    level:"level1",
     topics: [
       {
         code: "MATH116",
         title: "Mathématiques appliquées",
         cc: 14,
-        sn: 15,
+        sn: 60,
         semester: "s1",
+        credits:5
       },
       {
         code: "INFO101",
@@ -22,8 +24,10 @@ export const FakeStudents: studentResDto[] = [
         cc: 16,
         sn: 13,
         semester: "s1",
+        credits:2
+
       },
-      { code: "PHYS100", title: "Physique", cc: 13, sn: 17, semester: "s2" },
+      { code: "PHYS100", title: "Physique", cc: 13, sn: 17, semester: "s2" , credits:2  },
     ],
   },
   {
@@ -33,6 +37,7 @@ export const FakeStudents: studentResDto[] = [
     email: "benoit.durand@example.com",
     username: "benoit.durand",
     role: "STUDENT",
+    level:"level2",
     topics: [
       {
         code: "MATH116",
@@ -40,8 +45,9 @@ export const FakeStudents: studentResDto[] = [
         cc: 12,
         sn: 14,
         semester: "s1",
+        credits:2
       },
-      { code: "CHIM101", title: "Chimie", cc: 15, sn: 16, semester: "s2" },
+      { code: "CHIM101", title: "Chimie", cc: 15, sn: 16, semester: "s2", credits:2 },
     ],
   },
   {
@@ -51,6 +57,7 @@ export const FakeStudents: studentResDto[] = [
     email: "claire.lefevre@example.com",
     username: "claire.lefevre",
     role: "STUDENT",
+    level:"level3",
     topics: [
       {
         code: "INFO101",
@@ -58,9 +65,10 @@ export const FakeStudents: studentResDto[] = [
         cc: 17,
         sn: 18,
         semester: "s1",
+        credits:2
       },
-      { code: "PHYS100", title: "Physique", cc: 11, sn: 12, semester: "s2" },
-      { code: "CHIM101", title: "Chimie", cc: 13, sn: 15, semester: "s2" },
+      { code: "PHYS100", title: "Physique", cc: 11, sn: 12, semester: "s2" , credits:2},
+      { code: "CHIM101", title: "Chimie", cc: 13, sn: 15, semester: "s2", credits:2 },
     ],
   },
   {
@@ -70,6 +78,7 @@ export const FakeStudents: studentResDto[] = [
     email: "david.petit@example.com",
     username: "david.petit",
     role: "STUDENT",
+    level:"level1",
     topics: [
       {
         code: "MATH116",
@@ -77,6 +86,7 @@ export const FakeStudents: studentResDto[] = [
         cc: 15,
         sn: 16,
         semester: "s1",
+        credits:2
       },
       {
         code: "INFO101",
@@ -84,6 +94,7 @@ export const FakeStudents: studentResDto[] = [
         cc: 14,
         sn: 13,
         semester: "s1",
+        credits:2
       },
     ],
   },
@@ -94,9 +105,10 @@ export const FakeStudents: studentResDto[] = [
     email: "emma.roux@example.com",
     username: "emma.roux",
     role: "STUDENT",
+    level:"level2",
     topics: [
-      { code: "PHYS100", title: "Physique", cc: 16, sn: 17, semester: "s2" },
-      { code: "CHIM101", title: "Chimie", cc: 12, sn: 14, semester: "s2" },
+      { code: "PHYS100", title: "Physique", cc: 16, sn: 17, semester: "s2" , credits:2},
+      { code: "CHIM101", title: "Chimie", cc: 12, sn: 14, semester: "s2" , credits:2 },
     ],
   },
   {
@@ -106,6 +118,7 @@ export const FakeStudents: studentResDto[] = [
     email: "florian.girard@example.com",
     username: "florian.girard",
     role: "STUDENT",
+    level:"level3",
     topics: [
       {
         code: "MATH116",
@@ -113,6 +126,7 @@ export const FakeStudents: studentResDto[] = [
         cc: 13,
         sn: 12,
         semester: "s1",
+        credits:2
       },
       {
         code: "INFO101",
@@ -120,8 +134,9 @@ export const FakeStudents: studentResDto[] = [
         cc: 15,
         sn: 16,
         semester: "s1",
+        credits:2
       },
-      { code: "PHYS100", title: "Physique", cc: 10, sn: 11, semester: "s2" },
+      { code: "PHYS100", title: "Physique", cc: 10, sn: 11, semester: "s2" , credits:2},
     ],
   },
   {
@@ -131,14 +146,16 @@ export const FakeStudents: studentResDto[] = [
     email: "gaelle.lambert@example.com",
     username: "gaelle.lambert",
     role: "STUDENT",
+    level:"level4",
     topics: [
-      { code: "CHIM101", title: "Chimie", cc: 17, sn: 18, semester: "s2" },
+      { code: "CHIM101", title: "Chimie", cc: 17, sn: 18, semester: "s2" , credits:2 },
       {
         code: "INFO101",
         title: "Informatique",
         cc: 13,
         sn: 15,
         semester: "s1",
+        credits:2
       },
     ],
   },
@@ -149,6 +166,7 @@ export const FakeStudents: studentResDto[] = [
     email: "hugo.moreau@example.com",
     username: "hugo.moreau",
     role: "STUDENT",
+    level:"level4",
     topics: [
       {
         code: "MATH116",
@@ -156,8 +174,9 @@ export const FakeStudents: studentResDto[] = [
         cc: 16,
         sn: 17,
         semester: "s1",
+        credits:2
       },
-      { code: "PHYS100", title: "Physique", cc: 12, sn: 13, semester: "s2" },
+      { code: "PHYS100", title: "Physique", cc: 12, sn: 13, semester: "s2" , credits:2},
     ],
   },
   {
@@ -167,6 +186,7 @@ export const FakeStudents: studentResDto[] = [
     email: "ines.faure@example.com",
     username: "ines.faure",
     role: "STUDENT",
+    level:"level5",
     topics: [
       {
         code: "INFO101",
@@ -174,8 +194,9 @@ export const FakeStudents: studentResDto[] = [
         cc: 18,
         sn: 17,
         semester: "s1",
+        credits:2
       },
-      { code: "CHIM101", title: "Chimie", cc: 14, sn: 15, semester: "s2" },
+      { code: "CHIM101", title: "Chimie", cc: 14, sn: 15, semester: "s2", credits:2 },
     ],
   },
   {
@@ -185,6 +206,7 @@ export const FakeStudents: studentResDto[] = [
     email: "julien.bernard@example.com",
     username: "julien.bernard",
     role: "STUDENT",
+    level:"level5",
     topics: [
       {
         code: "MATH116",
@@ -192,9 +214,10 @@ export const FakeStudents: studentResDto[] = [
         cc: 11,
         sn: 13,
         semester: "s1",
+        credits:2
       },
-      { code: "PHYS100", title: "Physique", cc: 15, sn: 16, semester: "s2" },
-      { code: "CHIM101", title: "Chimie", cc: 13, sn: 14, semester: "s2" },
+      { code: "PHYS100", title: "Physique", cc: 15, sn: 16, semester: "s2" , credits:2 },
+      { code: "CHIM101", title: "Chimie", cc: 13, sn: 14, semester: "s2" ,credits:2 },
     ],
   },
 ];

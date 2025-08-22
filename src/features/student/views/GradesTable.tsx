@@ -1,53 +1,53 @@
 import { Table, Button, Modal,Tag } from "antd";
 import { PrinterIcon } from "@heroicons/react/24/solid";
 import { useState } from "react";
-import { studentResDto, Topic } from "../../../api/reponse-dto/user.res.dto";
-import Reclamations from "./Reclamations";
+import Reclamations from "../../reclamations/Reclamations.tsx";
 import { useNotification } from "../../../contexts";
+import {ReclamationsDetails} from "../../reclamations";
+import {StudentDataResDto, StudentGradeResDto, StudentTopicResDto} from "../../../api/reponse-dto/student.res.dto.ts";
 
 interface GradesTableProps {
-  student: studentResDto;
+  student: StudentDataResDto;
 }
 
 export interface ReclamationValuesProps {
-   reclamationType: string,
+    reclamationType: string,
     expectedGrade: number,
     reclamationReason: string,
     description: string,
 }
 
 export default function GradesTable({ student }: GradesTableProps) {
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [currentTopic, setCurrentTopic] = useState<Topic | null>(null);
-
-  const {notify} = useNotification()
-
-
-
   const initialReclamationsValues:ReclamationValuesProps = {
-     reclamationType: '',
+    reclamationType: '',
     expectedGrade: 0,
     reclamationReason: '',
     description: '',
   }
 
-   const [formValues, setFormValues] = useState(initialReclamationsValues);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [currentTopic, setCurrentTopic] = useState<StudentTopicResDto | null>(null);
+  const [formValues, setFormValues] = useState(initialReclamationsValues);
+  const [claimedTopics, setClaimedTopics] = useState<Set<string>>(new Set());
+  const {notify} = useNotification()
 
-
-  const showModal = (topic: Topic) => {
+  const showModal = (topic: StudentTopicResDto) => {
     setCurrentTopic(topic);
     setIsModalVisible(true);
   };
 
   const handleOk = () => {
-    notify({
-      type:'success',
-      message:"success",
-      description: `Réclamation envoyée pour la matière   ${currentTopic?.title}`
-    })
-    setFormValues(initialReclamationsValues)
-    setIsModalVisible(false);
-    setCurrentTopic(null);
+    if (currentTopic) {
+      setClaimedTopics(prev => new Set([...prev, currentTopic.code]));
+      notify({
+        type:'success',
+        message:"success",
+        description: `Revendication envoyée pour la matière ${currentTopic.title}`
+      });
+      setFormValues(initialReclamationsValues);
+      setIsModalVisible(false);
+      setCurrentTopic(null);
+    }
   };
 
   const handleCancel = () => {
@@ -58,82 +58,92 @@ export default function GradesTable({ student }: GradesTableProps) {
   const columns = [
     {
       title: "Code",
-      dataIndex: "code",
+      dataIndex: "subjectCode",
       render: (text: string) => text,
-      sorter: (a: Topic, b: Topic) => a.code.localeCompare(b.code),
+      sorter: (a: StudentGradeResDto, b: StudentGradeResDto) => 
+        (a.subjectCode || '').localeCompare(b.subjectCode || ''),
     },
     {
-      title: "Intitule de la matiere",
-      dataIndex: "title",
+      title: "Intitulé de la matière",
+      dataIndex: "subjectName",
       render: (text: string) => text,
-      sorter: (a: Topic, b: Topic) => a.title.localeCompare(b.title),
+      sorter: (a: StudentGradeResDto, b: StudentGradeResDto) => 
+        (a.subjectName || '').localeCompare(b.subjectName || ''),
     },
     {
       title: "Semestre",
-      dataIndex: "semester",
+      dataIndex: "semesterName",
       render: (text: string) => text,
-      sorter: (a: Topic, b: Topic) => a.semester.localeCompare(b.semester),
+      sorter: (a: StudentGradeResDto, b: StudentGradeResDto) => 
+        (a.semesterName || '').localeCompare(b.semesterName || ''),
     },
     {
       title: "CC/30",
-      dataIndex: "cc",
-      render: (cc: number | null) =>
-        cc !== null && cc !== undefined ? cc : "",
-      sorter: (a: Topic, b: Topic) => (a.cc || 0) - (b.cc || 0),
+      dataIndex: "value",
+      render: (value: number, record: StudentGradeResDto) => 
+        record.periodLabel === "CC" && value !== null && value !== undefined ? value : "",
+      sorter: (a: StudentGradeResDto, b: StudentGradeResDto) => {
+        const aValue = a.periodLabel === "CC" ? a.value : 0;
+        const bValue = b.periodLabel === "CC" ? b.value : 0;
+        return (aValue || 0) - (bValue || 0);
+      },
     },
     {
       title: "SN/70",
-      dataIndex: "sn",
-      render: (sn: number | null) =>
-        sn !== null && sn !== undefined ? sn : "",
-      sorter: (a: Topic, b: Topic) => (a.sn || 0) - (b.sn || 0),
+      dataIndex: "value",
+      render: (value: number, record: StudentGradeResDto) => 
+        record.periodLabel === "SN" && value !== null && value !== undefined ? value : "",
+      sorter: (a: StudentGradeResDto, b: StudentGradeResDto) => {
+        const aValue = a.periodLabel === "SN" ? a.value : 0;
+        const bValue = b.periodLabel === "SN" ? b.value : 0;
+        return (aValue || 0) - (bValue || 0);
+      },
     },
     {
       title: "Total",
-      dataIndex: "total",
-      render: (_: unknown, record: Topic) => {
-        const cc = record.cc || 0;
-        const sn = record.sn || 0;
-        return cc + sn;
-      },
-      sorter: (a: Topic, b: Topic) =>
-        (a.cc || 0) + (a.sn || 0) - ((b.cc || 0) + (b.sn || 0)),
+      dataIndex: "value",
+      render: (value: number) => (value !== null && value !== undefined ? value : ""),
+      sorter: (a: StudentGradeResDto, b: StudentGradeResDto) => (a.value || 0) - (b.value || 0),
     },
     {
-      title: "Mention",
-      dataIndex: "mention",
-      render: (_: unknown, record: Topic) => {
-        const cc = record.cc || 0;
-        const sn = record.sn || 0;
-        const total = cc + sn;
-        return total >= 50 ? "valide" : "echec";
-      },
-      sorter: () => 0,
+      title: "Crédit",
+      dataIndex: "creditsEarned",
+      render: (credits: number | null) => (credits !== null && credits !== undefined ? credits : ""),
+      sorter: (a: StudentGradeResDto, b: StudentGradeResDto) => 
+        (a.creditsEarned || 0) - (b.creditsEarned || 0),
     },
     {
-      title: "Decision",
-      dataIndex: "decision",
-      render: (_: unknown, record: Topic) => {
-        const cc = record.cc || 0;
-        const sn = record.sn || 0;
-        const total = cc + sn;
-        return total >= 50 ? "valide" : "echec";
-      },
-      sorter: () => 0,
+      title: "Décision",
+      dataIndex: "passed",
+      render: (passed: boolean) => passed ? "valide" : "echec",
+      sorter: (a: StudentGradeResDto, b: StudentGradeResDto) => 
+        (a.passed === b.passed) ? 0 : a.passed ? 1 : -1,
     },
     {
       title: "Action",
       key: "action",
       fixed: 'right',
       width: 'auto',
-      render: (_: unknown, record: Topic) => {
+      render: (_: unknown, record: StudentGradeResDto) => {
+        const subjectCode = record.subjectCode || '';
+        const hasClaimed = claimedTopics.has(subjectCode);
+        
+        const topicData = {
+          code: subjectCode,
+          title: record.subjectName || 'Sans nom',
+          cc: record.periodLabel === 'CC' ? record.value : null,
+          sn: record.periodLabel === 'SN' ? record.value : null,
+          semester: record.semesterName?.toLowerCase() as 's1' | 's2' || 's1',
+          credit: record.creditsEarned || 0
+        };
+
         return (
           <Tag
-            onClick={() => showModal(record)}
-            color="green"
+            onClick={() => showModal(topicData)}
+            color={hasClaimed ? "purple" : "green"}
             className="cursor-pointer"
           >
-            Revendication
+            {hasClaimed ? "Voir la revendication" : "Revendiquer"}
           </Tag>
         );
       },
@@ -145,8 +155,8 @@ export default function GradesTable({ student }: GradesTableProps) {
     <div className="mt-7">
       <Table
         columns={columns}
-        dataSource={student.topics}
-        rowKey={(record) => record.code}
+        dataSource={student?.grades}
+        rowKey={(record) => record.subjectCode}
         pagination={{ pageSize: 7 }}
         scroll={{ x: true }}
       />
@@ -155,14 +165,27 @@ export default function GradesTable({ student }: GradesTableProps) {
         onCancel={handleCancel}
         footer={null}
       >
-       <Reclamations 
-        currentTopic={currentTopic}
-        handleCancel={handleCancel}
-        handleOk={handleOk}
-        student={student}
-        formValues={formValues}
-        setFormValues={setFormValues}
-       />
+        {currentTopic && !claimedTopics.has(currentTopic.code) ? (
+            <Reclamations
+                currentTopic={currentTopic}
+                handleCancel={handleCancel}
+                handleOk={handleOk}
+                student={student}
+                formValues={formValues}
+                setFormValues={setFormValues}
+                hasClaimed={(code: string) => claimedTopics.has(code)}
+            />
+        ) : currentTopic && (
+            <ReclamationsDetails
+                student={student}
+                currentTopic={currentTopic}
+                formValues={formValues}
+                handleOk={handleOk}
+                hasClaimed={(code: string) => claimedTopics.has(code)}
+                handleCancel={handleCancel}
+            />
+        )}
+
       </Modal>
       <div className="flex justify-between mt-4 w-full">
         <Button

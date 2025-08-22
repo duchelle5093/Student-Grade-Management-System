@@ -1,0 +1,124 @@
+import { createSlice } from '@reduxjs/toolkit';
+import { TeacherGradeResDto} from '../../api/reponse-dto/grade.res.dto';
+import {
+    fetchTeacherGrades,
+    fetchStudentGrades,
+    updateGrade,
+    deleteGrade,
+    fetchGradeSheet,
+    exportGrades,
+    publishGrades
+} from './actions';
+import { StudentGradeResDto} from "../../api/reponse-dto/student.res.dto.ts";
+
+interface GradesState {
+    teacherGrades: TeacherGradeResDto[];
+    studentGrades: StudentGradeResDto[];
+    gradeSheet: any;
+    loading: boolean;
+    error: string | null;
+    exportLoading: boolean;
+    publishLoading: boolean;
+}
+
+const initialState: GradesState = {
+    teacherGrades: [],
+    studentGrades: [],
+    gradeSheet: null,
+    loading: false,
+    error: null,
+    exportLoading: false,
+    publishLoading: false,
+};
+
+const gradesSlice = createSlice({
+    name: 'grades',
+    initialState,
+    reducers: {
+        clearError: (state) => {
+            state.error = null;
+        },
+        clearStudentGrades: (state) => {
+            state.studentGrades = [];
+        },
+    },
+    extraReducers: (builder) => {
+        builder
+            .addCase(fetchTeacherGrades.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchTeacherGrades.fulfilled, (state, action) => {
+                state.loading = false;
+                state.teacherGrades = action.payload;
+            })
+            .addCase(fetchTeacherGrades.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message || 'Failed to fetch teacher grades';
+            })
+            .addCase(fetchStudentGrades.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchStudentGrades.fulfilled, (state, action) => {
+                state.loading = false;
+                state.studentGrades = action.payload;
+            })
+            .addCase(fetchStudentGrades.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message || 'Failed to fetch student grades';
+            })
+            .addCase(updateGrade.fulfilled, (state, action) => {
+                const updatedGrade = action.payload;
+                state.teacherGrades = state.teacherGrades.map(grade =>
+                    grade.id === updatedGrade.id ? { ...grade, ...updatedGrade } : grade
+                );
+                state.studentGrades = state.studentGrades.map(grade =>
+                    grade.studentId === updatedGrade.id ? { ...grade, ...updatedGrade } : grade
+                );
+            })
+            // Delete grade
+            .addCase(deleteGrade.fulfilled, (state, action) => {
+                const deletedId = action.payload;
+                state.teacherGrades = state.teacherGrades.filter(grade => grade.id !== deletedId);
+                state.studentGrades = state.studentGrades.filter(grade => grade.id !== deletedId);
+            })
+            // Fetch grade sheet
+            .addCase(fetchGradeSheet.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(fetchGradeSheet.fulfilled, (state, action) => {
+                state.loading = false;
+                state.gradeSheet = action.payload;
+            })
+            .addCase(fetchGradeSheet.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message || 'Failed to fetch grade sheet';
+            })
+            // Export grades
+            .addCase(exportGrades.pending, (state) => {
+                state.exportLoading = true;
+            })
+            .addCase(exportGrades.fulfilled, (state) => {
+                state.exportLoading = false;
+            })
+            .addCase(exportGrades.rejected, (state, action) => {
+                state.exportLoading = false;
+                state.error = action.error.message || 'Failed to export grades';
+            })
+            // Publish grades
+            .addCase(publishGrades.pending, (state) => {
+                state.publishLoading = true;
+            })
+            .addCase(publishGrades.fulfilled, (state) => {
+                state.publishLoading = false;
+            })
+            .addCase(publishGrades.rejected, (state, action) => {
+                state.publishLoading = false;
+                state.error = action.error.message || 'Failed to publish grades';
+            });
+    },
+});
+
+export const { clearError, clearStudentGrades } = gradesSlice.actions;
+export const gradesReducer = gradesSlice.reducer;

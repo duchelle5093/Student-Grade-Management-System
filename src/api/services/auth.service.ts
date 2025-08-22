@@ -1,10 +1,11 @@
 import {AxiosInstance} from 'axios';
 import {LoginreqDto, RegisterReqDto} from "../request-dto/auth.req.ts";
-import {LoginResDto} from "../reponse-dto/auth.res.dto.ts";
+import {ChangePasswordReqDto, LoginResDto} from "../reponse-dto/auth.res.dto.ts";
 
 const authApis = {
-   LOGIN: 'auth/login',
-    REGISTER : 'auth/register'
+    LOGIN: 'auth/login',
+    REGISTER : 'auth/register',
+    CHANGE_PASSWORD : 'auth/change-password',
 };
 
 export class AuthService {
@@ -27,6 +28,14 @@ export class AuthService {
             req
         )
 
+        return response.data;
+    }
+
+    async changePassword(req:Partial<ChangePasswordReqDto>){
+        const response = await this._client.post<ChangePasswordReqDto>(
+            authApis.CHANGE_PASSWORD,
+            req
+        )
         return response.data;
     }
 }

@@ -1,14 +1,16 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { studentResDto, userProfileResDto } from '../../api/reponse-dto/user.res.dto';
+import { userProfileResDto } from '../../api/reponse-dto/user.res.dto';
+import {StudentDataResDto} from "../../api/reponse-dto/student.res.dto.ts";
+import {fetchStudents} from "./actions.ts";
 
 interface UserSliceState {
   profile: userProfileResDto;
-  students: studentResDto[];
+  students:StudentDataResDto[];
 }
 
 const initialState: UserSliceState = {
   profile: {} as userProfileResDto,
-  students: [],
+  students: [] ,
 };
 
 const slice = createSlice({
@@ -18,14 +20,16 @@ const slice = createSlice({
     loadUserProfile(state, action: PayloadAction<userProfileResDto>) {
       state.profile = action.payload;
     },
-    loadStudents(state, action: PayloadAction<studentResDto[]>) {
-      state.students = action.payload;
+  },
+    extraReducers: (builder) => {
+        builder
+        .addCase(fetchStudents.fulfilled, (state, action) => {
+            state.students = action.payload;
+        })
     },
-  }
 });
 
 export const userReducer = slice.reducer;
 export const {
   loadUserProfile,
-  loadStudents
 } = slice.actions;

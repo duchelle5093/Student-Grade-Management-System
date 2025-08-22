@@ -4,6 +4,9 @@ import {authReducer} from "../features/auth/slice.ts";
 import {TypedUseSelectorHook, useDispatch, useSelector} from "react-redux";
 import {notificationReducer} from "../contexts";
 import { userReducer } from "../features/user/slices.ts";
+import { subjectsReducer } from "../features/subjects";
+import { gradesReducer } from "../features/grades";
+import { semestersReducer } from "../features/semesters";
 
 
 
@@ -11,8 +14,10 @@ const combinedReducer = combineReducers({
     navigation : navigationReducer,
     auth: authReducer,
     notification: notificationReducer,
-    user : userReducer
-
+    user : userReducer,
+    subjects: subjectsReducer,
+    grades: gradesReducer,
+    semesters: semestersReducer
 })
 
 const rootReducer = (state, action: Action) => {

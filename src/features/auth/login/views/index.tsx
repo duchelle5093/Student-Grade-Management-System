@@ -3,14 +3,14 @@ import {AppButton, PasswordInputFormItem} from "../../../../components";
 import {processLogin} from "../../actions.ts";
 import {useState} from "react";
 import {useAppDispatch} from "../../../../store";
-import { useNavigate } from "react-router";
+import {useAppNavigation} from "../../../../hooks";
 
 
 export const LoginForm = ()=>{
 
     const dispatch = useAppDispatch();
 
-    const navigate = useNavigate();
+    const {navigateTo} = useAppNavigation();
 
     type SubmissionForm = {
         username: string;
@@ -30,12 +30,12 @@ export const LoginForm = ()=>{
                     username,
                     password,
                 },
+                navigate: navigateTo
             })
         );
         setIsProcessing(false)
-        navigate('/dashboard');
+        //navigate('/dashboard');
     };
-
 
     return (
         <Form name={'login'} onFinish={onFinish}>
@@ -50,7 +50,7 @@ export const LoginForm = ()=>{
             >
                 <Input size={'large'} placeholder='Entrez votre nom'/>
             </Form.Item>
-            <PasswordInputFormItem/>
+            <PasswordInputFormItem />
             <AppButton
                 htmlType={'submit'}
                 loading={isProcessing}

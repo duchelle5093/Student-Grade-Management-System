@@ -1,10 +1,13 @@
 import { Input, Select, Form} from "antd";
 import { useContext} from "react";
-import { studentResDto, Topic } from "../../../api/reponse-dto/user.res.dto";
-import { StepperContext, StepperProvider } from "../../../contexts";
-import { AppButton, Stepper } from "../../../components";
-import { ReclamationValuesProps } from "./GradesTable";
+import { StepperContext, StepperProvider } from "../../contexts";
+import { AppButton, Stepper } from "../../components";
+import { ReclamationValuesProps } from "../student/views/GradesTable.tsx";
 import {ReclamationsDetails} from "./ReclamtionDetails.tsx";
+import {StudentDataResDto, StudentTopicResDto} from "../../api/reponse-dto/student.res.dto.ts";
+import {GradeClaimReqDto} from "../../api/request-dto/gradeClaim.req.dto.ts";
+import {useAppDispatch} from "../../store";
+import {submitGradeClaim} from "../grades";
 
 
 export default function Reclamations({
@@ -13,14 +16,13 @@ export default function Reclamations({
   handleCancel,
   currentTopic,
   formValues,
-  setFormValues,
   hasClaimed
   
 }: {
-  student: studentResDto;
+  student: StudentDataResDto;
   handleOk: () => void;
   handleCancel: () => void;
-  currentTopic: Topic | null;
+  currentTopic: StudentTopicResDto | null;
   formValues: ReclamationValuesProps;
   setFormValues: (payload: ReclamationValuesProps) => void;
   hasClaimed: (code: string) => boolean;
@@ -28,17 +30,25 @@ export default function Reclamations({
  
 
   const ReclamationForm = () => {
-  const { handleNext } = useContext(StepperContext);
+      const { handleNext } = useContext(StepperContext);
+      const dispatch = useAppDispatch()
 
 
-    const onFinish = (values: any) => {
-      const payload = {
-        reclamationType: values.reclamationType,
-        expectedGrade: values.expectedGrade,
-        reclamationReason: values.reclamationReason,
-        description: values.description,
+    const onFinish = (values: GradeClaimReqDto) => {
+
+      const grade = student?.grades.find(
+        grade => grade.subjectCode === currentTopic?.code &&
+             grade.type === values.reclamationType.toUpperCase()
+      );
+
+      const payload: GradeClaimReqDto = {
+          reclamationType: 'cc',
+          gradeId: grade?.id || 0,
+          requestedScore: values.requestedScore,
+          cause: values.cause,
+          description: values.description
       };
-      setFormValues(payload);
+      dispatch(submitGradeClaim(payload));
       handleNext?.();
     };
 
@@ -79,12 +89,12 @@ export default function Reclamations({
           <Form.Item
             label={
               <span className="font-semibold text-gray-700">
-                Note souhaitée
+                Note reclamée
               </span>
             }
-            name="expectedGrade"
+            name="requestedScore"
             rules={[
-              { required: true, message: "Veuillez entrer la note souhaitée." },
+              { required: true, message: "Veuillez entrer la note reclamée." },
             ]}
             className="mb-0 !-mt-4"
           >
@@ -92,7 +102,7 @@ export default function Reclamations({
               type="number"
               size="large"
               min={0}
-              placeholder="Entrez la note souhaitée"
+              placeholder="Entrez la note reclamée"
               className="!w-full"
             />
           </Form.Item>
@@ -102,7 +112,7 @@ export default function Reclamations({
                 Cause de la revendication
               </span>
             }
-            name="reclamationReason"
+            name="cause"
             rules={[
               {
                 required: true,
@@ -156,15 +166,16 @@ export default function Reclamations({
   };
 
 
-
-
   interface ItemsProps {
     label: string;
     content: React.ReactNode;
   }
 
   const stepItems: ItemsProps[] = [
-    { label: "", content: <ReclamationForm /> },
+    {
+        label: "",
+        content: <ReclamationForm />
+    },
     { 
       label: "", 
       content: (
@@ -174,6 +185,7 @@ export default function Reclamations({
           currentTopic={currentTopic} 
           formValues={formValues}
           hasClaimed={hasClaimed}
+          handleCancel={handleCancel}
         />
       ) 
     },
