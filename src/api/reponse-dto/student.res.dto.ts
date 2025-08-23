@@ -1,3 +1,5 @@
+import {PeriodLabel} from "../enums";
+
 export interface StudentGradeResDto {
     id: number;
     createdDate: string;
@@ -11,7 +13,7 @@ export interface StudentGradeResDto {
     semesterName: string;
     value: number;
     type: "ASSIGNMENT" | "EXAM" | "QUIZ" | "PROJECT" | "CC" | "SN";
-    periodLabel: 'CC' | 'SN';
+    periodLabel: PeriodLabel
     comments: string;
     enteredBy: number;
     enteredByName: string;

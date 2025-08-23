@@ -14,7 +14,6 @@ export const PersonalInfoForm =()=>{
         const payload: PersonalInfoDataType = {
             firstName : values.firstName,
             lastName: values.lastName,
-            phone: values.phone,
             dateOfBirth: values.dateOfBirth,
             placeOfBirth: values.placeOfBirth,
         }
@@ -49,17 +48,7 @@ export const PersonalInfoForm =()=>{
             >
                 <Input size={'large'}  placeholder='Entrez votre prenom'/>
             </Form.Item>
-            <Form.Item
-                name="phone"
-                rules={[
-                    {
-                        required: true,
-                        message: 'Champ obligatoire',
-                    },
-                ]}
-            >
-                <Input size={'large'} placeholder='Entrez votre numero de telephone'/>
-            </Form.Item>
+
             <Form.Item
                 name="dateOfBirth"
                 rules={[

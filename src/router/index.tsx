@@ -16,6 +16,8 @@ import { PrivateRoutes } from "../components/PrivateRoute.tsx";
 import { PageTitleProvider } from "../contexts";
 import NotFoundView from "../components/NotFoundView.tsx";
 import StudentPage from "../features/student/StudentPage.tsx";
+import AdminPage from "../features/admin";
+import AcademicPeriodsManager from "../features/admin";
 
 export const routes: RouteObject[] = [
   {
@@ -92,6 +94,10 @@ export const routes: RouteObject[] = [
         path: "student",
         element: <StudentPage/>,
       },
+        {
+            path: 'admin',
+            element: <AcademicPeriodsManager/>
+        }
     ],
   },
   {

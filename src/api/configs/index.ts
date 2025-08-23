@@ -6,6 +6,8 @@ import { UserService } from '../services/user.service.ts';
 import { SubjectService } from '../services/subject.service';
 import { GradeService } from '../services/grade.service';
 import { SemesterService } from '../services/semester.service';
+import { AdminService } from '../services/admin.service';
+import { AdminReportsService } from '../services/admin-reports.service';
 
 
 const apiGatewayClient = axios.create({
@@ -86,3 +88,7 @@ export const userService = new UserService(apiGatewayClient);
 export const subjectService = new SubjectService(apiGatewayClient);
 export const gradeService = new GradeService(apiGatewayClient);
 export const semesterService = new SemesterService(apiGatewayClient);
+export const adminService = new AdminService(apiGatewayClient);
+export const adminReportsService = new AdminReportsService(apiGatewayClient);
+
+export { apiGatewayClient };

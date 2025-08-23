@@ -6,7 +6,6 @@ export enum Role {
 
 export enum ColorTheme {
     PRIMARY = '#6EADFF',
-    SECONDARY = '#a6a3e1',
 }
 
 // Niveaux académiques
@@ -42,10 +41,10 @@ export enum Semester {
 
 // Labels de période pour les notes
 export enum PeriodLabel {
-    CC1 = 'CC1', // Contrôle Continu 1 (Semestre 1)
-    SN1 = 'SN1', // Session Normale 1 (Semestre 1)
-    CC2 = 'CC2', // Contrôle Continu 2 (Semestre 2)
-    SN2 = 'SN2', // Session Normale 2 (Semestre 2)
+    CC1 = 'CC #1', // Contrôle Continu 1 (Semestre 1)
+    SN1 = 'SN #1', // Session Normale 1 (Semestre 1)
+    CC2 = 'CC #2', // Contrôle Continu 2 (Semestre 2)
+    SN2 = 'SN #2', // Session Normale 2 (Semestre 2)
 }
 
 // Mapping des niveaux vers les noms d'affichage

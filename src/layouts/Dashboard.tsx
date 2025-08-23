@@ -75,7 +75,7 @@ export const Dashboard = () => {
                                     <SidebarNavItem
                                         to={"admin"}
                                         icon={<AcademicCapIcon width={26} />}
-                                        label={"Adminnnn"}
+                                        label={"Periodes"}
                                     />
                                 </>
 

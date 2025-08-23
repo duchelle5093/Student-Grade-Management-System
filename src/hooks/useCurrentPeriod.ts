@@ -1,35 +1,48 @@
 import { useMemo } from 'react';
 import { useAppSelector } from '../store';
-import { getEditableColumnsByPeriod, formatPeriodLabel } from '../utils';
+import { getEditableColumnsByPeriod, formatPeriodLabel, getCurrentPeriod } from '../utils';
+
+interface AcademicPeriod {
+    id: string;
+    name: string;
+    shortName: string;
+    type: 'CC' | 'SN';
+    semester: 1 | 2;
+    startDate: string;
+    endDate: string;
+    color: string;
+    isActive: boolean;
+    order: number;
+}
 
 interface UseCurrentPeriodReturn {
-    currentPeriodLabel: string;
-    formattedPeriod: string;
-    editableColumns: string[];
+    currentPeriodLabel: string;   // ex: "CC #1"
+    formattedPeriod: string;      // ex: "Contrôle Continu 1"
+    editableColumns: string[];    // ex: ["cc1"]
     activeSemester: any;
+    currentPeriod: AcademicPeriod | null;
 }
 
 /**
  * Hook personnalisé pour gérer la période actuelle
- * @param subjectId - ID de la matière (optionnel, pour des périodes spécifiques par matière)
- * @returns Informations sur la période actuelle
  */
-export const useCurrentPeriod = (subjectId?: string): UseCurrentPeriodReturn => {
+export const useCurrentPeriod = (periods?: AcademicPeriod[], subjectId?: string): UseCurrentPeriodReturn => {
     const { activeSemester } = useAppSelector(state => state.semesters);
 
-    // Pour le moment, utilisation d'une période statique
-    // À terme, cette période pourra venir de :
-    // 1. L'état global du semestre actif
-    // 2. Une configuration par matière
-    // 3. Une API dédiée à la gestion des périodes
-    const currentPeriodLabel = useMemo(() => {
-        // Logique future pour déterminer la période basée sur :
-        // - Les dates du semestre actif
-        // - La configuration de la matière
-        // - Les paramètres administratifs
+    const currentPeriod = useMemo(() => {
+        if (periods) {
+            return getCurrentPeriod(periods);
+        }
+        return null;
+    }, [periods]);
 
+    const currentPeriodLabel = useMemo(() => {
+        if (currentPeriod) {
+            return currentPeriod.shortName;
+        }
+        
+        // Fallback à l'ancienne logique si pas de periods fourni
         if (activeSemester) {
-            // Exemple de logique basée sur les dates
             const now = new Date();
             const semesterStart = new Date(activeSemester.startDate);
             const semesterEnd = new Date(activeSemester.endDate);
@@ -37,29 +50,27 @@ export const useCurrentPeriod = (subjectId?: string): UseCurrentPeriodReturn => 
             const elapsed = now.getTime() - semesterStart.getTime();
             const progress = elapsed / semesterDuration;
 
-            // Diviser le semestre en périodes
             if (progress < 0.25) {
-                return "CC1";
+                return "CC #1";
             } else if (progress < 0.5) {
-                return "SN1";
+                return "SN #1";
             } else if (progress < 0.75) {
-                return "CC2";
+                return "CC #2";
             } else {
-                return "SN2";
+                return "SN #2";
             }
         }
 
-        // Fallback par défaut
-        return "CC1";
-    }, [activeSemester, subjectId]);
+        return "CC #1";
+    }, [currentPeriod, activeSemester, subjectId]);
 
-    const formattedPeriod = useMemo(() =>
-            formatPeriodLabel(currentPeriodLabel),
+    const formattedPeriod = useMemo(
+        () => formatPeriodLabel(currentPeriodLabel),
         [currentPeriodLabel]
     );
 
-    const editableColumns = useMemo(() =>
-            getEditableColumnsByPeriod(currentPeriodLabel),
+    const editableColumns = useMemo(
+        () => getEditableColumnsByPeriod(currentPeriodLabel),
         [currentPeriodLabel]
     );
 
@@ -68,5 +79,6 @@ export const useCurrentPeriod = (subjectId?: string): UseCurrentPeriodReturn => 
         formattedPeriod,
         editableColumns,
         activeSemester,
+        currentPeriod,
     };
 };

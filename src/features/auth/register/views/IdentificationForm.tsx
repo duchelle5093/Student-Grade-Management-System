@@ -29,9 +29,9 @@ export const IdentificationForm =()=>{
         const payload: IdentificationInfoDataType = {
             username: values.username,
             email: values.email,
-            registrationKey: values.registrationKey,
             password: values.password,
-            level : values.level,
+            level: values.level,
+            matricule: values.matricule,
             speciality: values.speciality,
             cycle: values.cycle,
         }
@@ -41,9 +41,6 @@ export const IdentificationForm =()=>{
             role,
             ...identificationInfo
         })
-        // dispatch(navigateTo('/auth'))
-        // resetForm?.()
-
     }
 
 
@@ -71,21 +68,17 @@ export const IdentificationForm =()=>{
             >
                 <Input size={'large'} placeholder='Entrez votre email'/>
             </Form.Item>
-            {
-                (role === Role.ADMIN || role === Role.TEACHER) && (
-                    <Form.Item
-                        name="key"
-                        rules={[
-                            {
-                                required: true,
-                                message: 'Champ obligatoire',
-                            },
-                        ]}
-                    >
-                        <Input size={'large'} placeholder='Entrez votre cle'/>
-                    </Form.Item>
-                )
-            }
+            <Form.Item
+                name="matricule"
+                rules={[
+                    {
+                        required: true,
+                        message: 'Champ obligatoire',
+                    },
+                ]}
+            >
+                <Input size={'large'} placeholder='Entrez votre matricule'/>
+            </Form.Item>
             {
                 role === Role.STUDENT && (
                     <>

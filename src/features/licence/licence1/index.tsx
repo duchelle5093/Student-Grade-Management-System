@@ -1,232 +1,200 @@
-import { GradesHeader } from "../../../components/LicenceHeader";
-import { usePageTitle } from "../../../hooks/usePageTitle";
-import { EditableGradesTable } from "../../../components/EditableGradesTable";
-import { useState, useMemo, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../../store";
-import { EmptyGrade } from "../../../components/EmptyGrade";
-import { useCurrentPeriod, useFilteredStudents } from "../../../hooks";
+import { GradesHeader } from "../../../components/LicenceHeader";
+import { EditableGradesTable } from "../../../components/EditableGradesTable";
+import { usePageTitle } from "../../../hooks/usePageTitle";
+import { useFilteredStudents, useCurrentPeriod } from "../../../hooks";
+import { fetchStudents } from "../../user/actions";
+import { fetchTeacherGrades, createGrade, updateGrade } from "../../grades";
 import { fetchAssignedSubjects } from "../../subjects";
-import { createGrade, fetchTeacherGrades } from "../../grades";
-import { fetchStudents } from "../../user/actions.ts";
-import {CreateGradeReqDto, TeacherGradeResDto} from "../../../api/reponse-dto/grade.res.dto.ts";
-import { useNotification } from "../../../contexts";
 import { fetchActiveSemester } from "../../semesters";
-import { AcademicLevel, PeriodLabel } from "../../../api/enums";
-import { mockStudents, mockSubject } from "../mockData";
+import { AcademicLevel } from "../../../api/enums";
+import { TeacherGradeResDto, CreateGradeReqDto, UpdateGradeReqDto } from "../../../api/reponse-dto/grade.res.dto";
+import { useNotification } from "../../../contexts";
 
-// Variable pour activer/désactiver le mode test
-const USE_MOCK_DATA = true;
+/** ------------------------------
+ *  MOCKS si backend vide
+ *  ------------------------------ */
+const MOCK_ROWS = [
+    { studentId: 1, studentName: "Dupont Jean",   cc1: 15, sn1: null, cc2: null, sn2: 18 },
+    { studentId: 2, studentName: "Martin Sophie", cc1: 12, sn1: null, cc2: 16,   sn2: null },
+    { studentId: 3, studentName: "Bernard Pierre",cc1: null, sn1: 14, cc2: null, sn2: null },
+    { studentId: 4, studentName: "Petit Marie",   cc1: null, sn1: null,cc2: 10,  sn2: 11 },
+];
 
 export const Licence1 = () => {
     const dispatch = useAppDispatch();
-
-    // Hooks pour la période et le filtrage des étudiants
-    const { formattedPeriod, editableColumns, currentPeriodLabel } = useCurrentPeriod();
-    const { activeSemester } = useAppSelector(state => state.semesters);
-    const { teacherGrades } = useAppSelector(state => state.grades);
     const { notify } = useNotification();
+    const { activeSemester } = useAppSelector((s) => s.semesters);
+    const { teacherGrades } = useAppSelector((s) => s.grades);
+    const user = useAppSelector((s) => s.user.profile);
 
-    const user = useAppSelector((state) => state.user.profile);
-
-    // Utiliser le hook corrigé pour filtrer les étudiants de niveau L1
-    const {
-        filteredStudents,
-        teacherSubjectsForLevel,
-        hasStudents,
-        studentCount
-    } = useFilteredStudents({
-        currentLevel: AcademicLevel.LEVEL1
+    const { formattedPeriod, editableColumns, currentPeriodLabel } = useCurrentPeriod();
+    const { filteredStudents, teacherSubjectsForLevel } = useFilteredStudents({
+        currentLevel: AcademicLevel.LEVEL1,
     });
 
-    // États locaux pour la gestion du tableau
     const [isTableEditable, setIsTableEditable] = useState(false);
     const [searchValue, setSearchValue] = useState("");
-    const [editedData, setEditedData] = useState<TeacherGradeResDto[]>([]);
+    const [editedData, setEditedData] = useState<
+        Array<{ studentId: number; studentName: string; cc1: number | null; sn1: number | null; cc2: number | null; sn2: number | null; }>
+    >([]);
     const [selectedSubject, setSelectedSubject] = useState<any>(null);
-    const [showTable, setShowTable] = useState(false);
 
-    usePageTitle(
-        isTableEditable ? "Edition des notes de Licence 1" : "Notes Licence 1"
-    );
+    usePageTitle(isTableEditable ? "Edition des notes de Licence 1" : "Notes Licence 1");
 
-    // Colonnes dynamiques selon la période
-    const extraColumns: { title: string; dataIndex: string }[] = [];
-
-    const [dataTable, setDataTable] = useState<TeacherGradeResDto[]>([]);
-
-    // Sélectionner la première matière du niveau comme matière par défaut
+    // matière par défaut
     useEffect(() => {
-        if (USE_MOCK_DATA && !selectedSubject) {
-            setSelectedSubject(mockSubject);
-        } else if (teacherSubjectsForLevel.length > 0 && !selectedSubject) {
+        if (!selectedSubject && teacherSubjectsForLevel.length > 0) {
             setSelectedSubject(teacherSubjectsForLevel[0]);
         }
     }, [teacherSubjectsForLevel, selectedSubject]);
 
-    // Mettre à jour les données avec les étudiants filtrés ou les données de test
-    useEffect(() => {
-        if (USE_MOCK_DATA) {
-            // Utiliser les données de test
-            setDataTable(mockStudents);
-            setEditedData(mockStudents);
-            // Définir la matière de test si aucune n'est sélectionnée
-            if (!selectedSubject) {
-                setSelectedSubject(mockSubject);
-            }
-        } else if (filteredStudents.length > 0) {
-            // Utiliser les données de l'API
-            setDataTable(filteredStudents);
-            setEditedData(filteredStudents);
-        }
-    }, [filteredStudents, selectedSubject]);
+    /** Normalise "CC #1"/"SN #2" -> "cc1|sn1|cc2|sn2" */
+    const toPeriodKey = (periodLabel?: string) => {
+        if (!periodLabel) return null;
+        const norm = periodLabel.toUpperCase().replace(/\s+/g, ""); // "CC#1"
+        if (norm === "CC#1") return "cc1";
+        if (norm === "SN#1") return "sn1";
+        if (norm === "CC#2") return "cc2";
+        if (norm === "SN#2") return "sn2";
+        return null;
+    };
 
-    // Fonctions de gestion du tableau
+    /** Fusion STUDENTS (liste complète) + GRADES (optionnelles) -> lignes pour le tableau */
+    const mergedRows = useMemo(() => {
+        const rowsFromBackend =
+            filteredStudents.map((s) => {
+                const sid = (s as any).studentId ?? (s as any).id;
+                const name =
+                    (s as any).studentName ??
+                    ([s.firstName, s.lastName].filter(Boolean).join(" ") ||
+                        (s as any).username ||
+                        `Étudiant ${sid}`);
+
+                const g = teacherGrades.filter((gr) => gr.studentId === sid);
+
+                const map: Partial<Record<"cc1" | "sn1" | "cc2" | "sn2", number | null>> = {
+                    cc1: null, sn1: null, cc2: null, sn2: null,
+                };
+                g.forEach((gr) => {
+                    const key = toPeriodKey((gr as any).periodLabel);
+                    if (key) map[key] = gr.value;
+                });
+
+                return {
+                    studentId: sid,
+                    studentName: name,
+                    cc1: map.cc1 ?? null,
+                    sn1: map.sn1 ?? null,
+                    cc2: map.cc2 ?? null,
+                    sn2: map.sn2 ?? null,
+                };
+            });
+
+        const base = rowsFromBackend.length > 0 ? rowsFromBackend : MOCK_ROWS;
+
+        if (!searchValue.trim()) return base;
+        return base.filter((r) =>
+            r.studentName.toLowerCase().includes(searchValue.toLowerCase())
+        );
+    }, [filteredStudents, teacherGrades, searchValue]);
+
     const handleEdit = () => {
-        setEditedData(dataTable);
+        setEditedData(mergedRows);
         setIsTableEditable(true);
     };
 
+    /** Transforme "CC #1" -> { periodBase: "CC", semesterId: 1 } */
+    const parseCurrentPeriod = (label: string) => {
+        if (!label) return { periodBase: "CC", semesterId: activeSemester?.id ?? 1 };
+
+        const norm = label.toUpperCase().replace(/\s+/g, ""); // "CC#1"
+        if (norm === "CC#1") return { periodBase: "CC", semesterId: 1 };
+        if (norm === "SN#1") return { periodBase: "SN", semesterId: 1 };
+        if (norm === "CC#2") return { periodBase: "CC", semesterId: 2 };
+        if (norm === "SN#2") return { periodBase: "SN", semesterId: 2 };
+
+        return { periodBase: "CC", semesterId: activeSemester?.id ?? 1 };
+    };
+
     const handleConfirm = async () => {
-        console.log('=== DEBUT handleConfirm ===');
-        console.log('1. Données éditées:', editedData);
-        console.log('2. Colonnes éditables:', editableColumns);
-        console.log('3. Matière sélectionnée:', selectedSubject);
-        console.log('4. Semestre actif:', activeSemester);
-        
         try {
-            const currentDate = new Date().toISOString().split('T')[0];
-            const gradesToSubmit: CreateGradeReqDto[] = [];
-            
-            console.log('5. Période actuelle:', currentPeriodLabel);
+            const { periodBase, semesterId } = parseCurrentPeriod(currentPeriodLabel);
+            const key = (periodBase + (semesterId === 1 ? "1" : "2")).toLowerCase() as
+                | "cc1" | "sn1" | "cc2" | "sn2";
 
-            // 1. Préparer les données à envoyer
-            console.log('6. Données complètes des étudiants:', JSON.stringify(editedData, null, 2));
-            
-            // Déterminer le type de note (CC ou SN) et le numéro de session
-            const periodType = currentPeriodLabel.startsWith('CC') ? 'cc' : 'sn';
-            const periodNumber = currentPeriodLabel.replace(/\D/g, ''); // Extrait le numéro (1 ou 2)
-            const gradeField = `${periodType}${periodNumber}`.toLowerCase(); // cc1, sn1, cc2 ou sn2
-            
-            console.log(`7. Recherche des notes pour le champ: ${gradeField}`);
-            
-            for (const student of editedData) {
-                // Vérifier si l'étudiant a une note pour cette période
-                const hasGradeForPeriod = student.periodLabel === currentPeriodLabel;
-                const gradeValue = hasGradeForPeriod ? student.value : undefined;
-                
-                console.log(`8. Étudiant ${student.studentId || student.id} - ${student.studentName || 'Sans nom'}, ` +
-                           `période ${currentPeriodLabel}:`, gradeValue);
+            const payloads: Array<CreateGradeReqDto | ({ id: number } & UpdateGradeReqDto)> = [];
 
-                if (gradeValue !== undefined && gradeValue !== null && gradeValue !== '') {
-                    const numericValue = typeof gradeValue === 'string' ? parseFloat(gradeValue) : Number(gradeValue);
-                    console.log(`9. Valeur numérique traitée:`, numericValue);
-                    
-                    if (!isNaN(numericValue) && numericValue >= 0 && numericValue <= 20) {
-                        const gradeData = {
-                            studentId: student.studentId || student.id,
-                            subjectId: selectedSubject?.id || student.subjectId || 1,
-                            semesterId: activeSemester?.id || student.semesterId || 1,
-                            value: numericValue,
-                            type: currentPeriodLabel.startsWith('CC') ? 'ASSIGNMENT' : 'EXAM',
-                            periodLabel: currentPeriodLabel,
-                            comments: `Note ${currentPeriodLabel} ajoutée le ${currentDate}`,
-                            enteredBy: user?.id || 1
-                        };
-                        console.log('10. Données de la note à envoyer:', gradeData);
-                        gradesToSubmit.push(gradeData);
-                    }
+            for (const row of editedData) {
+                const v = (row as any)[key];
+                if (v === null || v === undefined || v === "") continue;
+                const value = Number(v);
+                if (Number.isNaN(value) || value < 0 || value > 20) continue;
+
+                const existing: TeacherGradeResDto | undefined = teacherGrades.find(
+                    (g) =>
+                        g.studentId === row.studentId &&
+                        g.semesterId === semesterId &&
+                        (g.periodLabel?.replace(/\s+/g, "").toUpperCase() === (periodBase + "#" + semesterId))
+                );
+
+                if (existing) {
+                    payloads.push({
+                        id: existing.id,
+                        value,
+                        type: periodBase, // <-- "CC" ou "SN"
+                        comments: `Note ${periodBase} ${semesterId} mise à jour`,
+                    });
+                } else {
+                    payloads.push({
+                        studentId: row.studentId,
+                        subjectId: selectedSubject?.id || 1,
+                        semesterId,
+                        value,
+                        type: periodBase, // <-- "CC" ou "SN"
+                        periodLabel: currentPeriodLabel, // ex: "CC #1"
+                        comments: `Note ${periodBase} ${semesterId} ajoutée`,
+                        enteredBy: user?.id || 1,
+                    });
                 }
             }
 
-            if (gradesToSubmit.length === 0) {
-                throw new Error("Aucune note valide à enregistrer");
+            if (payloads.length === 0) {
+                notify({ type: "warning", message: "Aucune note à enregistrer" });
+                setIsTableEditable(false);
+                return;
             }
 
-            console.log('7. Notes à soumettre:', gradesToSubmit);
-            
-            if (gradesToSubmit.length === 0) {
-                console.warn('8. Aucune note valide à enregistrer');
-                throw new Error("Aucune note valide à enregistrer");
+            for (const p of payloads) {
+                if ("id" in p) await dispatch(updateGrade(p)).unwrap();
+                else await dispatch(createGrade(p)).unwrap();
             }
 
-            // 2. Envoyer les notes une par une
-            const results = [];
-            console.log('9. Début de l\'envoi des notes...');
-            for (const gradeData of gradesToSubmit) {
-                try {
-                    console.log('Envoi de la note:', gradeData);
-                    const result = await dispatch(createGrade(gradeData)).unwrap();
-                    results.push(result);
-                } catch (error) {
-                    console.error('Erreur lors de l\'envoi d\'une note:', error);
-                    throw error;
-                }
-            }
-
-            // 3. Mettre à jour l'interface utilisateur
-            setDataTable(editedData);
-            setIsTableEditable(false);
-            
-            // 4. Rafraîchir les données du serveur
             await dispatch(fetchTeacherGrades());
-            
-            console.log('10. Toutes les notes ont été envoyées avec succès');
-            
-            // 5. Afficher le message de succès
+            setIsTableEditable(false);
+
             notify({
                 type: "success",
                 message: "Succès",
-                description: `${results.length} note(s) enregistrée(s) avec succès`
+                description: `${payloads.length} note(s) traitée(s)`,
             });
-
-        } catch (error) {
-            console.error('11. ERREUR dans handleConfirm:', error);
-
+        } catch (e) {
+            console.error(e);
+            notify({
+                type: "error",
+                message: "Erreur",
+                description: "Impossible d'enregistrer les notes",
+            });
         }
     };
 
-    // Filtrer les données selon la recherche
-    const filteredTableData = useMemo(() => {
-        const base = isTableEditable ? editedData : dataTable;
-        if (!searchValue.trim()) return base;
-
-        return base.filter((student) =>
-            `${student.studentName} `.toLowerCase()
-                .includes(searchValue.toLowerCase())
-        );
-    }, [searchValue, dataTable, editedData, isTableEditable]);
-
-    // Vérifier si au moins une note a été attribuée
-    const gradeFields = ["cc1", "sn1", "cc2", "sn2"];
-    const hasAtLeastOneGrade = filteredStudents.some(student =>
-        gradeFields.some(field => {
-            const value = (student as any)[field];
-            return value !== undefined && value !== null && value !== '';
-        })
-    );
-
-    // Charger les données initiales
     useEffect(() => {
-            dispatch(fetchAssignedSubjects());
-            dispatch(fetchTeacherGrades());
-            dispatch(fetchStudents());
-            dispatch(fetchActiveSemester());
+        dispatch(fetchAssignedSubjects());
+        dispatch(fetchTeacherGrades());
+        dispatch(fetchStudents());
+        dispatch(fetchActiveSemester());
     }, [dispatch]);
-
-    // Afficher un message si l'enseignant n'enseigne pas à ce niveau
-    // if (!hasSubjects) {
-    //     return (
-    //         <div className="text-center py-8">
-    //             <h2 className="text-xl font-semibold text-gray-600 mb-4">
-    //                 Aucune matière assignée pour le niveau Licence 1
-    //             </h2>
-    //             <p className="text-gray-500">
-    //                 Vous n'avez pas de matières assignées pour ce niveau.
-    //                 Contactez l'administration pour vérifier vos assignations.
-    //             </p>
-    //         </div>
-    //     );
-    // }
 
     return (
         <div>
@@ -241,34 +209,17 @@ export const Licence1 = () => {
             />
 
             <div className="mt-8">
-                {/*{(hasAtLeastOneGrade || showTable) ? (*/}
-                    <EditableGradesTable
-                        extraColumns={extraColumns}
-                        isEditable={isTableEditable}
-                        data={filteredTableData}
-                        onGradesChange={setEditedData}
-                        onEdit={handleEdit}
-                        onConfirm={handleConfirm}
-                        isDataEditable={isTableEditable}
-                        setIsDataEditable={setIsTableEditable}
-                        onSearch={setSearchValue}
-                        editableColumns={editableColumns}
-                    />
-                {/*) : hasAtLeastOneGrade ? (*/}
-                {/*    <EmptyGrade setShowTable={setShowTable} />*/}
-                {/*) : (*/}
-                {/*    <div className="text-center py-8">*/}
-                {/*        <p className="text-gray-500 text-lg">*/}
-                {/*            Aucun étudiant de niveau Licence 1 ne suit vos cours.*/}
-                {/*        </p>*/}
-                {/*        <p className="text-gray-400 text-sm mt-2">*/}
-                {/*            {studentCount === 0*/}
-                {/*                ? "Aucun étudiant trouvé pour ce niveau."*/}
-                {/*                : `${studentCount} étudiant(s) trouvé(s) mais aucun ne suit vos matières.`*/}
-                {/*            }*/}
-                {/*        </p>*/}
-                {/*    </div>*/}
-                {/*)}*/}
+                <EditableGradesTable
+                    data={mergedRows}
+                    isEditable={isTableEditable}
+                    onGradesChange={setEditedData}
+                    onEdit={handleEdit}
+                    onConfirm={handleConfirm}
+                    isDataEditable={isTableEditable}
+                    setIsDataEditable={setIsTableEditable}
+                    onSearch={setSearchValue}
+                    editableColumns={editableColumns as any}
+                />
             </div>
         </div>
     );

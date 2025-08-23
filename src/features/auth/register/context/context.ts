@@ -5,7 +5,6 @@ import {Role} from "../../../../api/enums";
 export type PersonalInfoDataType = {
     firstName: string;
     lastName: string;
-    phone: string;
     dateOfBirth: string;
     placeOfBirth: string;
 };
@@ -13,9 +12,9 @@ export type PersonalInfoDataType = {
 export type IdentificationInfoDataType = {
     username: string;
     email: string;
-    registrationKey: string;
     password: string;
-    level : string;
+    level: string;
+    matricule: string;
     speciality: string;
     cycle: string;
 };

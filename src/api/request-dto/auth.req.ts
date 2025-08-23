@@ -7,14 +7,17 @@ export interface LoginreqDto {
 
 
 export interface RegisterReqDto {
-    email: string;
     username: string;
+    email: string;
     password: string;
     firstName: string;
     lastName: string;
-    phone: string;
-    role: Role ;
-    registrationKey: string;
-    level : string;
+    role: Role;
+    level: string;
+    matricule: string;
+    speciality: string;
+    cycle: string;
+    dateOfBirth: string;
+    placeOfBirth: string;
 }
 
