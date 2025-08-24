@@ -133,7 +133,7 @@ export default function GradesTable({ student }: GradesTableProps) {
           title: record.subjectName || 'Sans nom',
           cc: record.periodLabel === 'CC' ? record.value : null,
           sn: record.periodLabel === 'SN' ? record.value : null,
-          semester: record.semesterName?.toLowerCase() as 's1' | 's2' || 's1',
+          semester: record.semesterName?.toLowerCase() as 'S1' | 'S2' ,
           credit: record.creditsEarned || 0
         };
 

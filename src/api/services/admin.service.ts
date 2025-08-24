@@ -16,9 +16,14 @@ const adminApis = {
     // Utilisateurs (utilise les endpoints existants)
     REGISTER_USER: 'auth/register',
     GET_STUDENTS: 'students',
+    DELETE_USER: 'users',
     
     // Enseignants
+    GET_TEACHERS: 'teachers',
     CREATE_TEACHER: 'admin/sub-teachers',
+    UPDATE_TEACHER: 'admin/teachers', // Peut-être que l'endpoint est sous /admin
+    DELETE_TEACHER: 'teachers',
+    UPDATE_STUDENT: 'admin/students', // Peut-être que l'endpoint est sous /admin
     
     // Départements
     GET_ALL_DEPARTMENTS: 'departments',
@@ -53,35 +58,57 @@ export class AdminService {
         return response.data;
     }
 
+    async getAllTeachers(): Promise<any[]> {
+        const response = await this._client.get<any[]>(adminApis.GET_TEACHERS);
+        return response.data;
+    }
+
     async createUser(userData: {
         username: string;
         email: string;
-        password: string;
         firstName: string;
         lastName: string;
         role: Role;
-        level: string;
-        matricule: string;
-        speciality: string;
-        cycle: string;
-        dateOfBirth: string;
-        placeOfBirth: string;
+        // Champs spécifiques aux étudiants
+        level?: string;
+        matricule?: string;
+        speciality?: string;
+        cycle?: string;
+        // Champs spécifiques aux enseignants
+        levels?: string[];
+        department?: string;
+        phone?: string;
     }): Promise<any> {
-        const registerData: RegisterReqDto = {
+        // Construire le payload selon le rôle
+        let payload: any = {
             username: userData.username,
             email: userData.email,
-            password: userData.password,
             firstName: userData.firstName,
             lastName: userData.lastName,
-            role: userData.role,
-            level: userData.level,
-            matricule: userData.matricule,
-            speciality: userData.speciality,
-            cycle: userData.cycle,
-            dateOfBirth: userData.dateOfBirth,
-            placeOfBirth: userData.placeOfBirth
+            role: userData.role
         };
-        const response = await this._client.post(adminApis.REGISTER_USER, registerData);
+
+        if (userData.role === Role.STUDENT) {
+            payload.level = userData.level;
+            payload.matricule = userData.matricule;
+            payload.speciality = userData.speciality;
+            payload.cycle = userData.cycle;
+        } else if (userData.role === Role.TEACHER) {
+            payload.levels = userData.levels;
+            payload.department = userData.department;
+            payload.phone = userData.phone;
+        }
+        
+        // Nettoyer le payload - supprimer les valeurs undefined
+        Object.keys(payload).forEach(key => {
+            if (payload[key] === undefined || payload[key] === null || payload[key] === '') {
+                delete payload[key];
+            }
+        });
+        
+        console.log('Clean payload sent to API:', payload); // Debug
+        
+        const response = await this._client.post(adminApis.REGISTER_USER, payload);
         return response.data;
     }
 
@@ -92,6 +119,42 @@ export class AdminService {
         return response.data;
     }
 
+    // Mise à jour des utilisateurs
+    async updateStudent(id: number, studentData: {
+        firstName: string;
+        lastName: string;
+        email: string;
+        level: string;
+        matricule: string;
+        speciality: string;
+        cycle: string;
+    }): Promise<any> {
+        console.log('Calling PUT', `${adminApis.UPDATE_STUDENT}/${id}`, 'with data:', studentData); // Debug
+        const response = await this._client.put(`${adminApis.UPDATE_STUDENT}/${id}`, studentData);
+        return response.data;
+    }
+
+    async updateTeacher(id: number, teacherData: {
+        firstName: string;
+        lastName: string;
+        email: string;
+        phone: string;
+        department: string;
+        levels: string[];
+    }): Promise<any> {
+        const response = await this._client.put(`${adminApis.UPDATE_TEACHER}/${id}`, teacherData);
+        return response.data;
+    }
+
+    // Suppression d'utilisateurs
+    async deleteUser(id: number): Promise<void> {
+        await this._client.delete(`${adminApis.DELETE_USER}/${id}`);
+    }
+
+    async deleteTeacher(id: number): Promise<void> {
+        await this._client.delete(`${adminApis.DELETE_TEACHER}/${id}`);
+    }
+
     // Gestion des matières
     async getAllSubjects(): Promise<SubjectResDto[]> {
         const response = await this._client.get<SubjectResDto[]>(adminApis.GET_ALL_SUBJECTS);
@@ -100,6 +163,11 @@ export class AdminService {
 
     async createSubject(subject: CreateSubjectReqDto): Promise<SubjectResDto> {
         const response = await this._client.post<SubjectResDto>(adminApis.CREATE_SUBJECT, subject);
+        return response.data;
+    }
+
+    async updateSubject(id: number, subject: any): Promise<SubjectResDto> {
+        const response = await this._client.put<SubjectResDto>(`${adminApis.GET_ALL_SUBJECTS}/${id}`, subject);
         return response.data;
     }
 

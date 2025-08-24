@@ -18,6 +18,8 @@ import NotFoundView from "../components/NotFoundView.tsx";
 import StudentPage from "../features/student/StudentPage.tsx";
 import AdminPage from "../features/admin";
 import AcademicPeriodsManager from "../features/admin";
+import { UsersManagement } from "../features/admin/components/UsersManagement";
+import {SubjectsManagement} from "../features/admin/components/SubjectsManagement.tsx";
 
 export const routes: RouteObject[] = [
   {
@@ -95,9 +97,18 @@ export const routes: RouteObject[] = [
         element: <StudentPage/>,
       },
         {
-            path: 'admin',
+            path: 'periods',
             element: <AcademicPeriodsManager/>
-        }
+        },
+        {
+            path: 'users',
+            element: <UsersManagement/>
+        },
+        {
+            path: 'Subjects',
+            element: <SubjectsManagement/>
+        },
+
     ],
   },
   {

@@ -7,6 +7,7 @@ import { userReducer } from "../features/user/slices.ts";
 import { subjectsReducer } from "../features/subjects";
 import { gradesReducer } from "../features/grades";
 import { semestersReducer } from "../features/semesters";
+import { adminReducer } from "../features/admin/slice";
 
 
 
@@ -17,7 +18,8 @@ const combinedReducer = combineReducers({
     user : userReducer,
     subjects: subjectsReducer,
     grades: gradesReducer,
-    semesters: semestersReducer
+    semesters: semestersReducer,
+    admin: adminReducer
 })
 
 const rootReducer = (state, action: Action) => {

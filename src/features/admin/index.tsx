@@ -468,3 +468,6 @@ const AcademicPeriodsManager = () => {
 };
 
 export default AcademicPeriodsManager;
+export * from './actions';
+export * from './slice';
+export * from './components';

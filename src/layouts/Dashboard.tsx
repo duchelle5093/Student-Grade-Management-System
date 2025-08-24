@@ -35,10 +35,7 @@ export const Dashboard = () => {
                 sidebarView={
                     <>
                         <div className="h-30 flex items-center justify-center">NIVEAUX</div>
-                        <main
-                            className={"overflow-y-auto overflow-x-hidden h-full text-black  "}
-                        >
-
+                        <main className={"overflow-y-auto overflow-x-hidden h-full text-black"}>
                             {hasPermission([Role.TEACHER]) && (
                                 <>
                                     <SidebarNavItem
@@ -73,15 +70,23 @@ export const Dashboard = () => {
                                         label={"Home"}
                                     />
                                     <SidebarNavItem
-                                        to={"admin"}
+                                        to={"periods"}
                                         icon={<AcademicCapIcon width={26} />}
                                         label={"Periodes"}
                                     />
+                                    <SidebarNavItem
+                                        to={"users"}
+                                        icon={<AcademicCapIcon width={26} />}
+                                        label={"Utilisateurs"}
+                                    />
+                                    <SidebarNavItem
+                                        to={"subjects"}
+                                        icon={<AcademicCapIcon width={26} />}
+                                        label={"Matieres"}
+                                    />
                                 </>
-
                             )}
                         </main>
-
                         <footer className="flex flex-col border-t border-gray-300">
                             <SidebarNavItem
                                 aria-label="dashboard sign out"
