@@ -18,11 +18,16 @@ import {
     CheckCircleOutlined
 } from '@ant-design/icons';
 import { useAppSelector } from '../../store';
-import { useTeacherLevels } from '../../hooks';
+import { useTeacherLevels, useRecentGrades, useStudentsByLevel, useGradeProgression, useRecentActivity } from '../../hooks';
+import { useEffect } from 'react';
+import { useAppDispatch } from '../../store';
+import { fetchTeacherGrades } from '../grades/actions';
+import { fetchStudents } from '../user/actions';
 
 const { Title, Text } = Typography;
 
 export const TeacherOverview = () => {
+    const dispatch = useAppDispatch();
     const { profile } = useAppSelector(state => state.user);
     const { 
         allTeacherLevels,
@@ -30,12 +35,22 @@ export const TeacherOverview = () => {
         masterLevelsCount,
         totalLevelsCount
     } = useTeacherLevels();
-
-    const recentActivity = [
-        { type: 'grade', name: 'Mathématiques L1', action: 'Notes saisies pour CC_1', time: '2h', avatar: 'M' },
-        { type: 'grade', name: 'Algèbre L2', action: 'Notes saisies pour SN_1', time: '1 jour', avatar: 'A' },
-        { type: 'claim', name: 'Réclamation', action: 'Nouvelle réclamation reçue', time: '2 jours', avatar: 'R' }
-    ];
+    
+    // Stats temps réel
+    const recentGrades = useRecentGrades();
+    const studentsByLevel = useStudentsByLevel();
+    const gradeProgression = useGradeProgression();
+    const recentActivity = useRecentActivity();
+    
+    // Refresh périodique des données (toutes les 30s)
+    useEffect(() => {
+        const interval = setInterval(() => {
+            dispatch(fetchTeacherGrades());
+            dispatch(fetchStudents());
+        }, 30000);
+        
+        return () => clearInterval(interval);
+    }, [dispatch]);
 
     return (
         <div style={{ padding: '24px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
@@ -82,8 +97,8 @@ export const TeacherOverview = () => {
                 <Col xs={24} sm={12} lg={6}>
                     <Card style={{ borderRadius: '12px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
                         <Statistic
-                            title="Réclamations"
-                            value={0}
+                            title="Notes récentes (24h)"
+                            value={recentGrades.count}
                             prefix={<CheckCircleOutlined style={{ color: '#FF85C0' }} />}
                             valueStyle={{ color: '#FF85C0', fontWeight: 'bold' }}
                         />
@@ -91,33 +106,33 @@ export const TeacherOverview = () => {
                 </Col>
             </Row>
 
-            <Row gutter={[16, 16]}>
-                <Col xs={24} lg={12}>
+            <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+                <Col xs={24} lg={8}>
                     <Card 
-                        title="Mes niveaux d'enseignement" 
+                        title="Étudiants par niveau" 
                         style={{ borderRadius: '12px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
                         headStyle={{ borderBottom: '1px solid #f0f0f0', fontWeight: 'bold' }}
                     >
-                        {allTeacherLevels.length > 0 ? (
+                        {studentsByLevel.levels.length > 0 ? (
                             <List
                                 itemLayout="horizontal"
-                                dataSource={allTeacherLevels}
-                                renderItem={(level) => (
+                                dataSource={studentsByLevel.levels}
+                                renderItem={(item) => (
                                     <List.Item>
                                         <List.Item.Meta
                                             avatar={
                                                 <Avatar 
                                                     style={{ 
-                                                        backgroundColor: level.level.startsWith('L') ? '#6EADFF' : '#B37FEB'
+                                                        backgroundColor: item.level.startsWith('LEVEL1') || item.level.startsWith('LEVEL2') || item.level.startsWith('LEVEL3') ? '#6EADFF' : '#B37FEB'
                                                     }}
                                                 >
-                                                    {level.level}
+                                                    {item.count}
                                                 </Avatar>
                                             }
-                                            title={<Text strong>{level.displayName}</Text>}
+                                            title={<Text strong>{item.level.replace('LEVEL', 'Niveau ')}</Text>}
                                             description={
-                                                <Tag color={level.level.startsWith('L') ? 'blue' : 'purple'}>
-                                                    {level.level.startsWith('L') ? 'Licence' : 'Master'}
+                                                <Tag color={item.level.startsWith('LEVEL1') || item.level.startsWith('LEVEL2') || item.level.startsWith('LEVEL3') ? 'blue' : 'purple'}>
+                                                    {item.percentage}% du total
                                                 </Tag>
                                             }
                                         />
@@ -126,13 +141,46 @@ export const TeacherOverview = () => {
                             />
                         ) : (
                             <Empty 
-                                description="Aucun niveau assigné"
+                                description="Aucun étudiant"
                                 image={Empty.PRESENTED_IMAGE_SIMPLE}
                             />
                         )}
                     </Card>
                 </Col>
-                <Col xs={24} lg={12}>
+                <Col xs={24} lg={8}>
+                    <Card 
+                        title="Progression des notes" 
+                        style={{ borderRadius: '12px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
+                        headStyle={{ borderBottom: '1px solid #f0f0f0', fontWeight: 'bold' }}
+                    >
+                        <div style={{ textAlign: 'center' }}>
+                            <Statistic
+                                title="Taux de progression"
+                                value={gradeProgression.progressRate}
+                                suffix="%"
+                                valueStyle={{ color: gradeProgression.progressRate > 50 ? '#52c41a' : '#faad14' }}
+                            />
+                            <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-around' }}>
+                                <div>
+                                    <Text type="secondary">Améliorations</Text>
+                                    <br />
+                                    <Text strong style={{ color: '#52c41a' }}>{gradeProgression.improvements}</Text>
+                                </div>
+                                <div>
+                                    <Text type="secondary">Déclins</Text>
+                                    <br />
+                                    <Text strong style={{ color: '#ff4d4f' }}>{gradeProgression.declines}</Text>
+                                </div>
+                                <div>
+                                    <Text type="secondary">Stables</Text>
+                                    <br />
+                                    <Text strong>{gradeProgression.stable}</Text>
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+                </Col>
+                <Col xs={24} lg={8}>
                     <Card 
                         title="Activité récente" 
                         style={{ borderRadius: '12px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}

@@ -162,6 +162,7 @@ export const Master1 = () => {
             }
 
             await dispatch(fetchTeacherGrades());
+            await dispatch(fetchStudents());
             setIsTableEditable(false);
 
             notify({
@@ -223,6 +224,10 @@ export const Master1 = () => {
                 level="Master 1"
                 NC="10"
                 CANT="10"
+                studentCount={filteredStudents.length}
+                claimsCount={mockClaimsData.studentsWithClaims.reduce((total, student) => 
+                    total + (student.grades?.flatMap(g => g.claims || []).filter(c => c.status === 'PENDING').length || 0), 0
+                )}
                 studentCount={filteredStudents.length}
             />
 

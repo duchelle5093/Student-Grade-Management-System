@@ -189,6 +189,7 @@ export const Licence2 = () => {
             }
 
             await dispatch(fetchTeacherGrades());
+            await dispatch(fetchStudents());
             setIsTableEditable(false);
 
             notify({
@@ -251,6 +252,9 @@ export const Licence2 = () => {
                 NC="10"
                 CANT="10"
                 studentCount={filteredStudents.length}
+                claimsCount={mockClaimsData.studentsWithClaims.reduce((total, student) => 
+                    total + (student.grades?.flatMap(g => g.claims || []).filter(c => c.status === 'PENDING').length || 0), 0
+                )}
             />
 
             <div className="mt-8">

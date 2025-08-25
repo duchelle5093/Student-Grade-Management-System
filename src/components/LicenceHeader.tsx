@@ -7,6 +7,7 @@ interface LicenceHeaderProps {
   CANT: string;
   title?: string;
   studentCount?: number;
+  claimsCount?: number;
 }
 
 export const GradesHeader = ({
@@ -17,6 +18,8 @@ export const GradesHeader = ({
   NC,
   CANT,
   title,
+  studentCount,
+  claimsCount = 0,
 }: LicenceHeaderProps) => {
   return (
     <div className="px-4 md:px-0 flex flex-col justify-between h-1/4 w-full">
@@ -30,7 +33,7 @@ export const GradesHeader = ({
               <p>
                 Periode : <span className="text-gray-500">{period}</span>
               </p>
-              <p className="text-secondary"> Revendications : 0 </p>
+              <p className="text-secondary"> Revendications : {claimsCount} </p>
             </div>
             <div>
               {code && (
@@ -66,7 +69,7 @@ export const GradesHeader = ({
             <p>
               CANT : <span className="text-gray-500">{CANT}</span>
             </p>
-            <p className="text-secondary"> Total revendictions : 0</p>
+            <p className="text-secondary"> Total revendications : {claimsCount}</p>
           </div>
         </div>
       </div>
