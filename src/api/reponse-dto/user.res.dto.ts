@@ -8,7 +8,7 @@ export interface userProfileResDto extends StudentTopicResDto{
     email: string;
     username: string;
     role: string;
-    level: string[];
+    levels: string[];
 }
 
 interface Topic {

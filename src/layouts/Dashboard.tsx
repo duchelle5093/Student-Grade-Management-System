@@ -13,12 +13,24 @@ import { SidebarNavSubItem } from "../components/SidebarNavSubItem.tsx";
 import { Role } from "../api/enums";
 import { Spinner } from "../components/Spinner.tsx";
 import {hasPermission} from "../utils";
+import { useTeacherLevels } from "../hooks";
 
 export const Dashboard = () => {
     const dispatch = useAppDispatch();
 
     const userProfile = useAppSelector((state) => state.user.profile);
-    const navigate = useNavigate()
+    const navigate = useNavigate();
+    
+    // Hook pour obtenir les niveaux enseignés
+    const {
+        hasLicenceLevels,
+        hasMasterLevels,
+        licenceLevels,
+        masterLevels
+    } = useTeacherLevels();
+    
+
+    
     if (!userProfile) {
         return <Spinner />;
     }
@@ -39,27 +51,42 @@ export const Dashboard = () => {
                             {hasPermission([Role.TEACHER]) && (
                                 <>
                                     <SidebarNavItem
-                                        to={"overview"}
+                                        to={"teacher-overview"}
                                         icon={<HomeIcon width={24} className="text-gray-500" />}
                                         label={"Home"}
                                     />
-                                    <SidebarNavItem
-                                        to={"licence1"}
-                                        icon={<AcademicCapIcon width={26} />}
-                                        label={"Licence"}
-                                    >
-                                        <SidebarNavSubItem label={"Licence 1"} to={"licence1"} />
-                                        <SidebarNavSubItem label={"Licence 2"} to={"licence2"} />
-                                        <SidebarNavSubItem label={"Licence 3"} to={"licence3"} />
-                                    </SidebarNavItem>
-                                    <SidebarNavItem
-                                        to={"master1"}
-                                        icon={<AcademicCapIcon width={26} />}
-                                        label={"Master"}
-                                    >
-                                        <SidebarNavSubItem label={"Master 1"} to={"master1"} />
-                                        <SidebarNavSubItem label={"Master 2"} to={"master2"} />
-                                    </SidebarNavItem>
+                                    {/* Affichage conditionnel des niveaux Licence */}
+                                    {hasLicenceLevels && (
+                                        <SidebarNavItem
+                                            to={licenceLevels[0]?.route || "licence1"}
+                                            icon={<AcademicCapIcon width={26} />}
+                                            label={"Licence"}
+                                        >
+                                            {licenceLevels.map(level => (
+                                                <SidebarNavSubItem 
+                                                    key={level.level}
+                                                    label={level.displayName} 
+                                                    to={level.route} 
+                                                />
+                                            ))}
+                                        </SidebarNavItem>
+                                    )}
+                                    {/* Affichage conditionnel des niveaux Master */}
+                                    {hasMasterLevels && (
+                                        <SidebarNavItem
+                                            to={masterLevels[0]?.route || "master1"}
+                                            icon={<AcademicCapIcon width={26} />}
+                                            label={"Master"}
+                                        >
+                                            {masterLevels.map(level => (
+                                                <SidebarNavSubItem 
+                                                    key={level.level}
+                                                    label={level.displayName} 
+                                                    to={level.route} 
+                                                />
+                                            ))}
+                                        </SidebarNavItem>
+                                    )}
                                 </>
                             )}
                             {hasPermission([Role.ADMIN]) && (

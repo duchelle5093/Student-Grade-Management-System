@@ -7,7 +7,8 @@ import {
     deleteGrade,
     fetchGradeSheet,
     exportGrades,
-    publishGrades
+    publishGrades,
+    fetchActivePeriod
 } from './actions';
 import { StudentGradeResDto} from "../../api/reponse-dto/student.res.dto.ts";
 
@@ -15,6 +16,7 @@ interface GradesState {
     teacherGrades: TeacherGradeResDto[];
     studentGrades: StudentGradeResDto[];
     gradeSheet: any;
+    activePeriod: any;
     loading: boolean;
     error: string | null;
     exportLoading: boolean;
@@ -25,6 +27,7 @@ const initialState: GradesState = {
     teacherGrades: [],
     studentGrades: [],
     gradeSheet: null,
+    activePeriod: null,
     loading: false,
     error: null,
     exportLoading: false,
@@ -116,6 +119,10 @@ const gradesSlice = createSlice({
             .addCase(publishGrades.rejected, (state, action) => {
                 state.publishLoading = false;
                 state.error = action.error.message || 'Failed to publish grades';
+            })
+            // Fetch active period
+            .addCase(fetchActivePeriod.fulfilled, (state, action) => {
+                state.activePeriod = action.payload;
             });
     },
 });

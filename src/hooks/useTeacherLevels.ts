@@ -10,15 +10,13 @@ import { AcademicLevel, LEVEL_DISPLAY_NAMES, LEVEL_ROUTES, LICENCE_LEVELS, MASTE
 // }
 
 export const useTeacherLevels = () => {
-    const { assignedSubjects } = useAppSelector(state => state.subjects);
+    const { profile } = useAppSelector(state => state.user);
 
-    // Extraire les niveaux uniques des matières assignées
+    // Extraire les niveaux depuis le profil utilisateur
     const uniqueLevels = useMemo(() => {
-        if (!assignedSubjects?.length) return [];
-
-        const levels = new Set(assignedSubjects.map(subject => subject.level));
-        return Array.from(levels) as AcademicLevel[];
-    }, [assignedSubjects]);
+        if (!profile?.levels?.length) return [];
+        return profile.levels as AcademicLevel[];
+    }, [profile?.levels]);
 
     // Générer les données pour les niveaux de Licence
     const licenceLevels = useMemo(() => {
@@ -27,11 +25,10 @@ export const useTeacherLevels = () => {
             .map(level => ({
                 level,
                 displayName: LEVEL_DISPLAY_NAMES[level],
-                route: LEVEL_ROUTES[level],
-                subjects: assignedSubjects?.filter(subject => subject.level === level) || []
+                route: LEVEL_ROUTES[level]
             }))
             .sort((a, b) => a.level.localeCompare(b.level));
-    }, [uniqueLevels, assignedSubjects]);
+    }, [uniqueLevels]);
 
     // Générer les données pour les niveaux de Master
     const masterLevels = useMemo(() => {
@@ -40,11 +37,10 @@ export const useTeacherLevels = () => {
             .map(level => ({
                 level,
                 displayName: LEVEL_DISPLAY_NAMES[level],
-                route: LEVEL_ROUTES[level],
-                subjects: assignedSubjects?.filter(subject => subject.level === level) || []
+                route: LEVEL_ROUTES[level]
             }))
             .sort((a, b) => a.level.localeCompare(b.level));
-    }, [uniqueLevels, assignedSubjects]);
+    }, [uniqueLevels]);
 
     // Tous les niveaux enseignés
     const allTeacherLevels = useMemo(() => {
@@ -69,9 +65,6 @@ export const useTeacherLevels = () => {
         totalLevelsCount: allTeacherLevels.length,
 
         // Méthodes utilitaires
-        getLevelSubjects: (level: AcademicLevel) => {
-            return assignedSubjects?.filter(subject => subject.level === level) || [];
-        },
 
         isLevelTaught: (level: AcademicLevel) => {
             return uniqueLevels.includes(level);

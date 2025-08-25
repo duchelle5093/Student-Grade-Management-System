@@ -107,3 +107,11 @@ export const fetchGradeSheetSelf = createAsyncThunk(
         return response;
     }
 )
+
+export const fetchActivePeriod = createAsyncThunk(
+    'grades/fetchActivePeriod',
+    async () => {
+        const response = await gradeService.getActivePeriod();
+        return response;
+    }
+)

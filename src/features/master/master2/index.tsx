@@ -1,144 +1,183 @@
-import { GradesHeader } from "../../../components/LicenceHeader";
-import { usePageTitle } from "../../../hooks/usePageTitle";
-import { EditableGradesTable } from "../../../components/EditableGradesTable";
-import { useState, useMemo, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../../store";
-import { studentResDto } from "../../../api/reponse-dto/user.res.dto";
-import { FakeStudents } from "../../user/data";
-import { EmptyGrade } from "../../../components/EmptyGrade";
+import { GradesHeader } from "../../../components/LicenceHeader";
+import { TeacherGradesTable } from "../../../components";
+import { mockClaimsData } from "../../teacher/mockClaimsData";
+import { usePageTitle } from "../../../hooks/usePageTitle";
+import { useFilteredStudents, useActivePeriodPolling } from "../../../hooks";
+import { 
+    formatPeriodLabel, 
+    periodLabelToColumnKey, 
+    parsePeriodLabel, 
+    isValidGradeValue,
+    findExistingGrade 
+} from "../../../utils/periodUtils";
+import { fetchStudents } from "../../user/actions";
+import { fetchTeacherGrades, createGrade, updateGrade } from "../../grades";
+import { fetchAssignedSubjects } from "../../subjects";
+import { fetchActiveSemester } from "../../semesters";
+import { AcademicLevel } from "../../../api/enums";
+import { CreateGradeReqDto, UpdateGradeReqDto } from "../../../api/reponse-dto/grade.res.dto";
+import { useNotification } from "../../../contexts";
 
-import { useCurrentPeriod } from "../../../hooks";
-import {fetchAssignedSubjects} from "../../subjects";
-import {createGrade, fetchTeacherGrades} from "../../grades";
-import {fetchStudents} from "../../user/actions.ts";
-import {CreateGradeReqDto} from "../../../api/reponse-dto/grade.res.dto.ts";
-import {useNotification} from "../../../contexts";
-import {fetchActiveSemester} from "../../semesters";
+
 
 export const Master2 = () => {
     const dispatch = useAppDispatch();
-    const { assignedSubjects} = useAppSelector(state => state.subjects);
-    // const { teacherGrades, loading: gradesLoading } = useAppSelector(state => state.grades);
-    const { formattedPeriod, editableColumns, currentPeriodLabel } = useCurrentPeriod();
-    const { activeSemester } = useAppSelector(state => state.semesters);
-    const {  teacherGrades } = useAppSelector(state => state.grades);
-    const {notify} = useNotification()
+    const { notify } = useNotification();
+    const { activeSemester } = useAppSelector((s) => s.semesters);
+    const { teacherGrades } = useAppSelector((s) => s.grades);
+    const user = useAppSelector((s) => s.user.profile);
 
-    const user = useAppSelector((state) => state.auth.userInfo);
-    // const students = useAppSelector(state => state.user.students);
+    const { activePeriod, editableColumns } = useActivePeriodPolling({ enabled: true, interval: 10000 });
+    const currentPeriodLabel = activePeriod?.shortName || "CC_1";
+    const formattedPeriod = formatPeriodLabel(currentPeriodLabel);
+    const { filteredStudents, teacherSubjectsForLevel } = useFilteredStudents({
+        currentLevel: AcademicLevel.LEVEL5, // Master 2
+    });
 
+    interface StudentGradeRow {
+        studentId: number;
+        studentName: string;
+        cc1: number | null;
+        sn1: number | null;
+        cc2: number | null;
+        sn2: number | null;
+    }
+    
     const [isTableEditable, setIsTableEditable] = useState(false);
     const [searchValue, setSearchValue] = useState("");
-    const [editedData, setEditedData] = useState<studentResDto[]>(FakeStudents);
-    const [selectedSubject, setSelectedSubject] = useState<any>(null);
-    const [showTable, setShowTable] = useState(false);
+    const [editedData, setEditedData] = useState<StudentGradeRow[]>([]);
+    const [selectedSubject, setSelectedSubject] = useState<{ id: number; name: string; code: string } | null>(null);
 
-    usePageTitle(
-        isTableEditable ? "Edition des notes de Master 2" : "Notes Master 2"
-    );
+    usePageTitle(isTableEditable ? "Edition des notes de Master 2" : "Notes Master 2");
 
-    // Colonnes dynamiques selon la période
-    const extraColumns: { title: string; dataIndex: string }[] = [];
-    // Ici vous pouvez ajouter des colonnes supplémentaires selon vos besoins
-
-    const [dataTable, setDataTable] = useState<studentResDto[]>(FakeStudents);
-
-
-    // Filter subjects for master 2 (LEVEL4 and BACHELOR cycle)
-    const licence1Subjects = useMemo(() => {
-        return assignedSubjects.filter(subject =>
-            subject.level === "LEVEL4" && subject.cycle === "BACHELOR"
-        );
-    }, [assignedSubjects]);
-
-    // Set first subject as selected if available
+    // matière par défaut
     useEffect(() => {
-        if (licence1Subjects.length > 0 && !selectedSubject) {
-            setSelectedSubject(licence1Subjects[0]);
+        if (!selectedSubject && teacherSubjectsForLevel.length > 0) {
+            setSelectedSubject(teacherSubjectsForLevel[0]);
         }
-    }, [licence1Subjects, selectedSubject]);
+    }, [teacherSubjectsForLevel, selectedSubject]);
 
+    /** FLOW CORRECT: TOUS les étudiants M2 + leurs notes pour la matière sélectionnée */
+    const mergedRows = useMemo((): StudentGradeRow[] => {
+        return filteredStudents.map((student) => {
+            const studentId = student.id || student.studentId;
+            const studentName = student.studentName || 
+                [student.firstName, student.lastName].filter(Boolean).join(" ") ||
+                student.username ||
+                `Étudiant ${studentId}`;
+
+            const studentGrades = teacherGrades.filter((grade) => 
+                grade.studentId === studentId && 
+                grade.subjectId === selectedSubject?.id
+            );
+
+            const gradeMap: Record<string, number | null> = {
+                cc1: null, sn1: null, cc2: null, sn2: null,
+            };
+            
+            studentGrades.forEach((grade) => {
+                const columnKey = periodLabelToColumnKey(grade.periodLabel);
+                if (columnKey && columnKey in gradeMap) {
+                    gradeMap[columnKey] = grade.value;
+                }
+            });
+
+            return {
+                studentId,
+                studentName,
+                cc1: gradeMap.cc1,
+                sn1: gradeMap.sn1,
+                cc2: gradeMap.cc2,
+                sn2: gradeMap.sn2,
+            };
+        });
+    }, [filteredStudents, teacherGrades, selectedSubject?.id]);
+
+    const displayRows = useMemo(() => {
+        if (!searchValue.trim()) return mergedRows;
+        return mergedRows.filter((r) =>
+            r.studentName.toLowerCase().includes(searchValue.toLowerCase())
+        );
+    }, [mergedRows, searchValue]);
 
     const handleEdit = () => {
-        setEditedData(dataTable);
+        setEditedData(displayRows);
         setIsTableEditable(true);
     };
 
-    // useEffect(() => {
-    //   dispatch(fetchStudents());
-    // }, [dispatch]);
-
-    // Fonction pour confirmer et envoyer les notes
     const handleConfirm = async () => {
-
         try {
+            if (!selectedSubject?.id) {
+                notify({ type: "error", message: "Aucune matière disponible" });
+                return;
+            }
 
-            const currentDate = new Date().toISOString().split('T')[0];
-            const gradesToSubmit: CreateGradeReqDto[] = [];
+            const { type: periodType, semester } = parsePeriodLabel(currentPeriodLabel);
+            const columnKey = periodLabelToColumnKey(currentPeriodLabel);
+            const payloads: Array<CreateGradeReqDto | ({ id: number } & UpdateGradeReqDto)> = [];
 
-            for (const student of editedData) {
-                const gradeField = editableColumns[0]; //  premier champ éditable (cc1, sn1, etc.)
-                const gradeValue = student[gradeField];
+            for (const row of editedData) {
+                const gradeValue = row[columnKey as keyof StudentGradeRow];
+                
+                if (!isValidGradeValue(gradeValue, currentPeriodLabel)) continue;
+                
+                const value = Number(gradeValue);
+                const existing = findExistingGrade(teacherGrades, row.studentId, currentPeriodLabel);
 
-                if (gradeValue !== undefined && gradeValue !== null && gradeValue !== '') {
-                    gradesToSubmit.push({
-                        studentId: student.id,
-                        subjectId: selectedSubject?.id || 1,
-                        semesterId: activeSemester?.id || 1,
-                        value: parseFloat(gradeValue) ,
-                        type: 'ASSIGNMENT',
-                        periodLabel: currentPeriodLabel ,
-                        comments: `Note ajoutée le ${currentDate}`,
-                        enteredBy: user?.id || 1
+                if (existing) {
+                    payloads.push({
+                        id: existing.id,
+                        value,
+                        type: periodType as any,
+                        comments: `Note ${periodType} S${semester} mise à jour`,
+                    });
+                } else {
+                    payloads.push({
+                        studentId: row.studentId,
+                        subjectId: selectedSubject.id,
+                        semesterId: activeSemester?.id || semester,
+                        value,
+                        type: periodType as any,
+                        periodLabel: currentPeriodLabel,
+                        comments: `Note ${periodType} S${semester} ajoutée`,
+                        enteredBy: user?.id || 1,
                     });
                 }
             }
 
-            if (gradesToSubmit.length === 0) {
-                console.warn('Aucune note valide à enregistrer');
+            if (payloads.length === 0) {
+                notify({ type: "warning", message: "Aucune note valide à enregistrer" });
+                setIsTableEditable(false);
                 return;
             }
 
-            gradesToSubmit.map(gradeData =>
-                dispatch(createGrade(gradeData)).unwrap()
-            )
+            for (const payload of payloads) {
+                if ("id" in payload) {
+                    await dispatch(updateGrade(payload)).unwrap();
+                } else {
+                    await dispatch(createGrade(payload)).unwrap();
+                }
+            }
 
-            setDataTable(editedData);
+            await dispatch(fetchTeacherGrades());
             setIsTableEditable(false);
-            dispatch(fetchTeacherGrades());
+
             notify({
                 type: "success",
-                message: "Success",
-                description: `Notes enregistrées avec succès`
-            })
+                message: "Succès",
+                description: `${payloads.length} note(s) traitée(s)`,
+            });
         } catch (error) {
+            console.error(error);
             notify({
                 type: "error",
                 message: "Erreur",
-                description: `Erreur lors de l'enregistrement des notes: ${error}`
-            })
+                description: "Impossible d'enregistrer les notes",
+            });
         }
     };
-
-    const filteredTableData = useMemo(() => {
-        const base = isTableEditable ? editedData : dataTable;
-        if (!searchValue) return base;
-        return base.filter((student) =>
-            (student.firstName || "")
-                .toLowerCase()
-                .includes(searchValue.toLowerCase())
-        );
-    }, [searchValue, dataTable, editedData, isTableEditable]);
-
-    // Détermine si au moins une note a été attribuée à un étudiant
-    const gradeFields = ["cc1", "sn1", "cc2","sn2"];
-    const hasAtLeastOneGrade = dataTable.some(student =>
-        gradeFields.some(field => {
-            const value = student[field];
-            return value !== undefined && value !== null && value !== '';
-        })
-    );
-
 
     useEffect(() => {
         dispatch(fetchAssignedSubjects());
@@ -147,37 +186,60 @@ export const Master2 = () => {
         dispatch(fetchActiveSemester());
     }, [dispatch]);
 
+    if (teacherSubjectsForLevel.length === 0) {
+        return (
+            <div className="text-center py-8">
+                <h2 className="text-xl font-semibold text-gray-600 mb-4">
+                    Aucune matière assignée pour le niveau Master 2
+                </h2>
+                <p className="text-gray-500">
+                    Vous n'avez pas de matières assignées pour ce niveau.
+                    Contactez l'administration pour vérifier vos assignations.
+                </p>
+            </div>
+        );
+    }
+
+    if (filteredStudents.length === 0) {
+        return (
+            <div className="text-center py-8">
+                <h2 className="text-xl font-semibold text-gray-600 mb-4">
+                    Aucun étudiant trouvé en Master 2
+                </h2>
+                <p className="text-gray-500">
+                    Il n'y a aucun étudiant inscrit dans cette classe pour la matière sélectionnée.
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div>
             <GradesHeader
                 title="M2"
                 period={formattedPeriod}
-                topic={teacherGrades[0]?.subjectName || "Matière"}
-                code={teacherGrades[0]?.subjectCode  || "CODE"}
+                topic={selectedSubject?.name || "Matière"}
+                code={selectedSubject?.code || "CODE"}
                 level="Master 2"
                 NC="10"
-                CANT="20"
+                CANT="10"
+                studentCount={filteredStudents.length}
             />
+
             <div className="mt-8">
-                {hasAtLeastOneGrade || showTable ? (
-                    <EditableGradesTable
-                        extraColumns={extraColumns}
-                        isEditable={isTableEditable}
-                        data={filteredTableData}
-                        onGradesChange={setEditedData}
-                        onEdit={handleEdit}
-                        onConfirm={handleConfirm}
-                        isDataEditable={isTableEditable}
-                        setIsDataEditable={setIsTableEditable}
-                        onSearch={setSearchValue}
-                        editableColumns={editableColumns}
-                    />
-                ) : (
-                    <EmptyGrade setShowTable={setShowTable}/>
-                )}
+                <TeacherGradesTable
+                    data={displayRows}
+                    studentsWithClaims={mockClaimsData.studentsWithClaims}
+                    isEditable={isTableEditable}
+                    onGradesChange={setEditedData}
+                    onEdit={handleEdit}
+                    onConfirm={handleConfirm}
+                    isDataEditable={isTableEditable}
+                    setIsDataEditable={setIsTableEditable}
+                    onSearch={setSearchValue}
+                    editableColumns={editableColumns}
+                />
             </div>
         </div>
     );
 };
-

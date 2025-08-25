@@ -8,6 +8,7 @@ import {
 } from '../reponse-dto/grade.res.dto';
 import {StudentDataResDto } from "../reponse-dto/student.res.dto.ts";
 import {GradeClaimReqDto} from "../request-dto/gradeClaim.req.dto.ts";
+import { GradingWindowResponse } from './grading-windows.service';
 
 const gradeApis = {
     CREATE: 'grades',
@@ -24,6 +25,7 @@ const gradeApis = {
     REJECT_GRADE_CLAIM: 'grade-claims',
     SUBMIT_GRADE_CLAIM: 'grade-claims',
     LIST_GRADE_CLAIMS: 'grade-claims',
+    GET_ACTIVE_PERIOD: 'grading-windows/active',
 };
 
 export class GradeService {
@@ -99,6 +101,11 @@ export class GradeService {
 
     async listGradeClaims(): Promise<any> {
         const response = await this._client.get(`${gradeApis.LIST_GRADE_CLAIMS}`);
+        return response.data;
+    }
+
+    async getActivePeriod(): Promise<GradingWindowResponse | null> {
+        const response = await this._client.get<GradingWindowResponse | null>(gradeApis.GET_ACTIVE_PERIOD);
         return response.data;
     }
 }

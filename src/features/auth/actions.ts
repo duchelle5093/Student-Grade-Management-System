@@ -29,7 +29,8 @@ export const processLogin = createAsyncThunk(
                     description: 'Connexion reussie!'
                 }));
             }else {
-                navigate('/dashboard');
+                const redirectPath = res.role === Role.TEACHER ? '/dashboard/teacher-overview' : '/dashboard';
+                navigate(redirectPath);
                 dispatch(triggerClientNotification({
                     type: 'success',
                     message: "Success",

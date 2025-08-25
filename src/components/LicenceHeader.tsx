@@ -1,5 +1,3 @@
-import { FakeStudents } from "../features/user/data";
-
 interface LicenceHeaderProps {
   period: string;
   topic?: string;
@@ -8,6 +6,7 @@ interface LicenceHeaderProps {
   NC: string;
   CANT: string;
   title?: string;
+  studentCount?: number;
 }
 
 export const GradesHeader = ({
@@ -57,7 +56,7 @@ export const GradesHeader = ({
             {code && (
               <p>
                 Nombre d'étudiants :{" "}
-                <span className="text-gray-500">{FakeStudents.length}</span>
+                <span className="text-gray-500">{studentCount || 0}</span>
               </p>
             )}
             <p>

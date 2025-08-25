@@ -15,7 +15,6 @@ export const ChangePwdForm = ()=>{
     type SubmissionForm = {
         newPassword: string;
         confirmPassword: string;
-        currentPassword: string;
     };
 
     const [isProcessing, setIsProcessing] = useState(false);
@@ -23,7 +22,6 @@ export const ChangePwdForm = ()=>{
     const onFinish = async ({
                                 newPassword,
                                 confirmPassword,
-                                currentPassword
                             }: SubmissionForm) => {
         setIsProcessing(true);
         await dispatch(
@@ -31,7 +29,6 @@ export const ChangePwdForm = ()=>{
                 req: {
                     newPassword,
                     confirmPassword,
-                    currentPassword
                 },
                 navigate: navigateTo
             })
@@ -41,7 +38,6 @@ export const ChangePwdForm = ()=>{
 
     return (
         <Form name={'change-password'} onFinish={onFinish}>
-            <PasswordInputFormItem name={'currentPassword'} placeholder={'Mot de passe actuel'}/>
             <PasswordInputFormItem name={'newPassword'} placeholder={'Nouveau mot de passe'}/>
             <PasswordInputFormItem name={'confirmPassword'} placeholder={'Confirmer le mot de passe'}/>
             <AppButton

@@ -19,10 +19,6 @@ export enum AcademicLevel {
 
 // Types de notes
 export enum GradeType {
-    ASSIGNMENT = 'ASSIGNMENT',
-    EXAM = 'EXAM',
-    QUIZ = 'QUIZ',
-    PROJECT = 'PROJECT',
     CC = 'CC', // Contrôle Continu
     SN = 'SN', // Session Normale
 }
@@ -41,10 +37,10 @@ export enum Semester {
 
 // Labels de période pour les notes
 export enum PeriodLabel {
-    CC1 = 'CC #1', // Contrôle Continu 1 (Semestre 1)
-    SN1 = 'SN #1', // Session Normale 1 (Semestre 1)
-    CC2 = 'CC #2', // Contrôle Continu 2 (Semestre 2)
-    SN2 = 'SN #2', // Session Normale 2 (Semestre 2)
+    CC1 = 'CC_1', // Contrôle Continu 1 (Semestre 1)
+    SN1 = 'SN_1', // Session Normale 1 (Semestre 1)
+    CC2 = 'CC_2', // Contrôle Continu 2 (Semestre 2)
+    SN2 = 'SN_2', // Session Normale 2 (Semestre 2)
 }
 
 // Mapping des niveaux vers les noms d'affichage

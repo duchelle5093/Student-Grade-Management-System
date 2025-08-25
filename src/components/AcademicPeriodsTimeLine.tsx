@@ -1,9 +1,13 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { Button, Typography, Card } from "antd";
 import dayjs from "dayjs";
+import { useAppDispatch, useAppSelector } from "../store";
+import { fetchAllGradingWindows } from "../features/admin/actions";
+import { GradingWindowResponse } from "../api/services/grading-windows.service";
+import { CreatePeriodModal } from "./CreatePeriodModal";
 
 const { Title, Text } = Typography;
 
@@ -16,54 +20,73 @@ interface Period {
     isActive?: boolean;
 }
 
-// Données mockées du backend
-const academicData = {
-    currentPeriod: {
-        id: 'cc2',
-        name: 'Contrôle Continu #2',
-        shortName: 'CC #2',
-        startDate: '2025-02-02',
-        endDate: '2025-03-15'
+// Données mockées de fallback
+const mockPeriods = [
+    {
+        id: "cc1",
+        title: "CC_1",
+        start: "2024-10-01",
+        end: "2024-11-28",
+        color: "#C4A484",
+        isActive: false
     },
-    periods: [
-        {
-            id: "cc1",
-            title: "CC #1",
-            start: "2024-10-01",
-            end: "2024-11-28",
-            color: "#C4A484",
-            isActive: false
-        },
-        {
-            id: "sn1",
-            title: "SN #1",
-            start: "2024-11-28",
-            end: "2025-02-02",
-            color: "#F5C77C",
-            isActive: false
-        },
-        {
-            id: "cc2",
-            title: "CC #2",
-            start: "2025-02-02",
-            end: "2025-03-15",
-            color: "#C4A484",
-            isActive: true
-        },
-        {
-            id: "sn2",
-            title: "SN #2",
-            start: "2025-03-15",
-            end: "2025-06-30",
-            color: "#C4A484",
-            isActive: false
-        }
-    ]
-};
+    {
+        id: "sn1",
+        title: "SN_1",
+        start: "2024-11-28",
+        end: "2025-02-02",
+        color: "#F5C77C",
+        isActive: false
+    },
+    {
+        id: "cc2",
+        title: "CC_2",
+        start: "2025-02-02",
+        end: "2025-03-15",
+        color: "#C4A484",
+        isActive: true
+    },
+    {
+        id: "sn2",
+        title: "SN_2",
+        start: "2025-03-15",
+        end: "2025-06-30",
+        color: "#C4A484",
+        isActive: false
+    }
+];
 
-const periods = academicData.periods;
+// Fonction pour convertir les données du backend au format de l'interface
+const convertGradingWindowToPeriod = (window: GradingWindowResponse) => ({
+    id: window.id.toString(),
+    title: window.shortName,
+    start: window.startDate,
+    end: window.endDate,
+    color: window.color || "#C4A484",
+    isActive: window.isActive
+});
 
 export const AcademicTimeline: React.FC = () => {
+    const dispatch = useAppDispatch();
+    const { gradingWindows = [], loading = false } = useAppSelector(state => state.admin || {});
+    const [periods, setPeriods] = useState<Period[]>([]);
+    const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
+
+    useEffect(() => {
+        dispatch(fetchAllGradingWindows());
+    }, [dispatch]);
+
+    useEffect(() => {
+        if (gradingWindows && gradingWindows.length > 0) {
+            // Utiliser les données du backend si disponibles
+            const convertedPeriods = gradingWindows.map(convertGradingWindowToPeriod);
+            setPeriods(convertedPeriods);
+        } else {
+            // Fallback vers les données mockées si l'API ne retourne rien
+            setPeriods(mockPeriods);
+        }
+    }, [gradingWindows]);
+
     // Déterminer la période active selon la propriété isActive
     const currentPeriod = periods.find(p => p.isActive) || periods[0];
 
@@ -74,14 +97,15 @@ export const AcademicTimeline: React.FC = () => {
                 <div>
                     <Title level={4}>Période en cours</Title>
                     <Text className="text-amber-600 font-semibold block">
-                        {currentPeriod.title === "CC #1" ? "Contrôle Continu #1" :
-                         currentPeriod.title === "SN #1" ? "Session Normale #1" :
-                         currentPeriod.title === "CC #2" ? "Contrôle Continu #2" :
-                         "Session Normale #2"}
+                        {currentPeriod?.title || "Aucune période active"}
                     </Text>
                     <Text className="block">
-                        {dayjs(currentPeriod.start).format("DD MMM")} -{" "}
-                        {dayjs(currentPeriod.end).format("DD MMM")}
+                        {currentPeriod ? (
+                            <>
+                                {dayjs(currentPeriod.start).format("DD MMM")} -{" "}
+                                {dayjs(currentPeriod.end).format("DD MMM")}
+                            </>
+                        ) : "Aucune date définie"}
                     </Text>
                 </div>
 
@@ -131,9 +155,19 @@ export const AcademicTimeline: React.FC = () => {
 
             {/* ACTIONS */}
             <div className="flex justify-end gap-4 mt-6">
-                <Button>Annuler</Button>
+                <Button onClick={() => setIsCreateModalVisible(true)}>Nouvelle Période</Button>
                 <Button type="primary">Enregistrer</Button>
             </div>
+
+            {/* Modal de création */}
+            <CreatePeriodModal
+                visible={isCreateModalVisible}
+                onCancel={() => setIsCreateModalVisible(false)}
+                onSuccess={() => {
+                    setIsCreateModalVisible(false);
+                    dispatch(fetchAllGradingWindows());
+                }}
+            />
         </Card>
     );
 };

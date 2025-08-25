@@ -10,15 +10,15 @@ import {
   Overview,
   RegisterPage,
 } from "../features";
+import { TeacherOverview } from "../features/teacher";
 import { AuthLayout } from "../layouts";
 import { Dashboard } from "../layouts/Dashboard.tsx";
 import { PrivateRoutes } from "../components/PrivateRoute.tsx";
 import { PageTitleProvider } from "../contexts";
 import NotFoundView from "../components/NotFoundView.tsx";
 import StudentPage from "../features/student/StudentPage.tsx";
-import AdminPage from "../features/admin";
 import AcademicPeriodsManager from "../features/admin";
-import { UsersManagement } from "../features/admin/components/UsersManagement";
+import { UsersManagement } from "../features/admin";
 import {SubjectsManagement} from "../features/admin/components/SubjectsManagement.tsx";
 
 export const routes: RouteObject[] = [
@@ -42,10 +42,10 @@ export const routes: RouteObject[] = [
         path: "login",
         element: <LoginPage />,
       },
-      {
-        path: "register",
-        element: <RegisterPage />,
-      },
+      // {
+      //   path: "register",
+      //   element: <RegisterPage />,
+      // },
       {
         path: "change-password",
         element: <ChangePwdPage />,
@@ -71,6 +71,10 @@ export const routes: RouteObject[] = [
       {
         path: "overview",
         element: <Overview />,
+      },
+      {
+        path: "teacher-overview",
+        element: <TeacherOverview />,
       },
       {
         path: "licence1",
@@ -105,10 +109,9 @@ export const routes: RouteObject[] = [
             element: <UsersManagement/>
         },
         {
-            path: 'Subjects',
+            path: 'subjects',
             element: <SubjectsManagement/>
         },
-
     ],
   },
   {

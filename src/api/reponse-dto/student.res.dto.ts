@@ -12,7 +12,7 @@ export interface StudentGradeResDto {
     semesterId: number;
     semesterName: string;
     value: number;
-    type: "ASSIGNMENT" | "EXAM" | "QUIZ" | "PROJECT" | "CC" | "SN";
+    type: "CC" | "SN";
     periodLabel: PeriodLabel
     comments: string;
     enteredBy: number;

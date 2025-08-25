@@ -12,10 +12,10 @@ export const LoginPage = () => {
                 <h2 className={' text-gray-500 font-bold text-3xl'}>Bonjour !</h2>
                 <p className={'my-4 text-gray-400'}>Connectez vous pour commencer a travailler </p>
                 <LoginForm/>
-                <div className={'flex items-center justify-between text-gray-400 mt-5'}>
-                    <p>Vous n'avez pas de compte ?</p>
-                    <Link to={'/auth/register'} className={'text-primary'}>S'inscrire</Link>
-                </div>
+                {/*<div className={'flex items-center justify-between text-gray-400 mt-5'}>*/}
+                {/*    <p>Vous n'avez pas de compte ?</p>*/}
+                {/*    <Link to={'/auth/register'} className={'text-primary'}>S'inscrire</Link>*/}
+                {/*</div>*/}
             </div>
         </>
     )

@@ -43,12 +43,9 @@ export const updateUser = createAsyncThunk(
     'admin/updateUser',
     async ({ id, userData, role }: { id: number; userData: any; role: Role }, { rejectWithValue }) => {
         try {
-            console.log('Update user - Role:', role, 'ID:', id, 'Data:', userData); // Debug
-            if (role === Role.TEACHER || role === 'TEACHER') {
-                console.log('Calling updateTeacher'); // Debug
+            if (role === Role.TEACHER) {
                 return await adminService.updateTeacher(id, userData);
             } else {
-                console.log('Calling updateStudent'); // Debug
                 return await adminService.updateStudent(id, userData);
             }
         } catch (error: any) {
@@ -106,5 +103,35 @@ export const importTeachers = createAsyncThunk(
     'admin/importTeachers',
     async (file: File) => {
         return await adminReportsService.importTeachers(file);
+    }
+);
+
+// Actions pour les fenêtres de notation
+export const fetchAllGradingWindows = createAsyncThunk(
+    'admin/fetchAllGradingWindows',
+    async () => {
+        return await adminService.getAllGradingWindows();
+    }
+);
+
+export const createGradingWindow = createAsyncThunk(
+    'admin/createGradingWindow',
+    async (windowData: any, { rejectWithValue }) => {
+        try {
+            return await adminService.createGradingWindow(windowData);
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Erreur lors de la création');
+        }
+    }
+);
+
+export const updateGradingWindow = createAsyncThunk(
+    'admin/updateGradingWindow',
+    async (windowData: any, { rejectWithValue }) => {
+        try {
+            return await adminService.updateGradingWindow(windowData);
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Erreur lors de la modification');
+        }
     }
 );

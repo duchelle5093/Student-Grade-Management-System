@@ -1,0 +1,373 @@
+import { useState, useEffect, useMemo } from "react";
+import { Table, Input, Button, Tag, Modal, Badge } from "antd";
+import { MagnifyingGlassCircleIcon, ExclamationTriangleIcon } from "@heroicons/react/24/solid";
+import { ExclamationCircleOutlined } from "@ant-design/icons";
+import { GradesEdition } from "./GradesEditionBtn";
+import { EditPvButton } from "./EditPvButton";
+import { ReclamationsDetails } from "../features/reclamations";
+import { TeacherGradeResDto } from "../api/reponse-dto/grade.res.dto";
+import { StudentWithClaims, ClaimData } from "../features/teacher/mockClaimsData";
+import { useAppDispatch } from "../store";
+import { gradeService } from "../api/configs";
+import { useNotification } from "../contexts";
+import { useActivePeriodPolling } from "../hooks/useActivePeriodPolling";
+import { getMaxGradeValue } from "../utils/periodUtils";
+
+// Interface pour les données d'affichage du tableau
+interface StudentGradeRow {
+    studentId: number;
+    studentName: string;
+    cc1: number | null;
+    sn1: number | null;
+    cc2: number | null;
+    sn2: number | null;
+}
+
+interface TeacherGradesTableProps {
+    isEditable: boolean;
+    data: StudentGradeRow[];
+    studentsWithClaims?: StudentWithClaims[];
+    onGradesChange?: (data: StudentGradeRow[]) => void;
+    onEdit: () => void;
+    onConfirm: () => void;
+    isDataEditable?: boolean;
+    setIsDataEditable: (value: boolean) => void;
+    onSearch?: (value: string) => void;
+}
+
+export const TeacherGradesTable = ({
+    isEditable,
+    data,
+    studentsWithClaims = [],
+    onGradesChange,
+    onEdit,
+    onConfirm,
+    setIsDataEditable,
+    isDataEditable,
+    onSearch,
+
+}: TeacherGradesTableProps) => {
+    const [editingData, setEditingData] = useState<StudentGradeRow[]>(data);
+    const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
+    const [selectedClaim, setSelectedClaim] = useState<ClaimData | null>(null);
+    const [selectedStudent, setSelectedStudent] = useState<StudentWithClaims | null>(null);
+    const [rejectReason, setRejectReason] = useState("");
+    const { notify } = useNotification();
+    
+    // Polling de la période active
+    const { activePeriod, editableColumns: pollingEditableColumns } = useActivePeriodPolling({
+        enabled: true,
+        interval: 30000 // 30 secondes
+    });
+
+    useEffect(() => {
+        setEditingData(data);
+    }, [data]);
+
+    const periodMap: Record<string, "CC_1" | "SN_1" | "CC_2" | "SN_2"> = {
+        cc1: "CC_1",
+        sn1: "SN_1", 
+        cc2: "CC_2",
+        sn2: "SN_2",
+    };
+
+    // Vérifier si un étudiant a une revendication pour une période donnée
+    const getClaimForStudent = (studentId: number, period: "cc1" | "sn1" | "cc2" | "sn2"): ClaimData | null => {
+        const student = studentsWithClaims.find(s => s.id === studentId);
+        if (!student) return null;
+
+        const periodType = period.startsWith('cc') ? 'CC' : 'SN';
+        return student.grades
+            ?.flatMap(g => g.claims || [])
+            ?.find(c => c.period === periodType && c.status === 'PENDING') || null;
+    };
+
+    const getStudentGrade = (studentId: number, field: "cc1" | "sn1" | "cc2" | "sn2") => {
+        const student = editingData.find(s => s.studentId === studentId);
+        return student?.[field] ?? null;
+    };
+
+    const updateStudentGrade = (studentId: number, field: string, value: string) => {
+        const numericValue = value ? parseFloat(value) : null;
+
+        const newData = editingData.map(student => {
+            if (student.studentId === studentId) {
+                return {
+                    ...student,
+                    [field]: numericValue
+                };
+            }
+            return student;
+        });
+
+        setEditingData(newData);
+        onGradesChange?.(newData);
+    };
+
+    const handleClaimClick = (studentId: number, period: "cc1" | "sn1" | "cc2" | "sn2") => {
+        const student = studentsWithClaims.find(s => s.id === studentId);
+        const claim = getClaimForStudent(studentId, period);
+        
+        if (student && claim) {
+            setSelectedStudent(student);
+            setSelectedClaim(claim);
+            setIsClaimModalOpen(true);
+        }
+    };
+
+    const handleApproveClaim = async () => {
+        if (!selectedClaim) return;
+
+        try {
+            await gradeService.approveGradeClaim(parseInt(selectedClaim.id));
+            notify({
+                type: 'success',
+                message: 'Revendication approuvée',
+                description: 'La note a été mise à jour'
+            });
+            setIsClaimModalOpen(false);
+            setSelectedClaim(null);
+            setSelectedStudent(null);
+        } catch (error) {
+            notify({
+                type: 'error',
+                message: 'Erreur',
+                description: 'Impossible d\'approuver la revendication'
+            });
+        }
+    };
+
+    const handleRejectClaim = async () => {
+        if (!selectedClaim || !rejectReason.trim()) return;
+
+        try {
+            await gradeService.rejectGradeClaim(parseInt(selectedClaim.id), rejectReason);
+            notify({
+                type: 'success',
+                message: 'Revendication rejetée',
+                description: 'L\'étudiant a été notifié'
+            });
+            setIsClaimModalOpen(false);
+            setSelectedClaim(null);
+            setSelectedStudent(null);
+            setRejectReason("");
+        } catch (error) {
+            notify({
+                type: 'error',
+                message: 'Erreur',
+                description: 'Impossible de rejeter la revendication'
+            });
+        }
+    };
+
+    const columns = [
+        {
+            title: "Matricule",
+            dataIndex: "studentId",
+            key: "studentId",
+            sorter: (a: StudentGradeRow, b: StudentGradeRow) =>
+                Number(a.studentId) - Number(b.studentId),
+        },
+        {
+            title: "Noms et prénoms",
+            dataIndex: "studentName",
+            key: "studentName",
+            sorter: (a: StudentGradeRow, b: StudentGradeRow) =>
+                String(a.studentName || "").localeCompare(String(b.studentName || "")),
+        },
+        ...["cc1", "sn1", "cc2", "sn2"].map((field) => ({
+            title: <div>{field.toUpperCase()}</div>,
+            key: field,
+            sorter: (a: StudentGradeRow, b: StudentGradeRow) => {
+                const gradeA = getStudentGrade(a.studentId, field as any) || 0;
+                const gradeB = getStudentGrade(b.studentId, field as any) || 0;
+                return gradeA - gradeB;
+            },
+            render: (_: any, record: StudentGradeRow) => {
+                const grade = getStudentGrade(record.studentId, field as any);
+                const claim = getClaimForStudent(record.studentId, field as any);
+                const hasClaim = claim !== null;
+
+                // Seul le polling détermine les colonnes éditables
+                const currentEditableColumns = pollingEditableColumns.length > 0 
+                    ? pollingEditableColumns 
+                    : []; // Aucune colonne éditable si pas de période active
+                
+                if (isEditable && currentEditableColumns.includes(field)) {
+                    const periodMap: Record<string, string> = {
+                        cc1: "CC_1", sn1: "SN_1", cc2: "CC_2", sn2: "SN_2"
+                    };
+                    const maxValue = getMaxGradeValue(periodMap[field]);
+                    
+                    return (
+                        <Input
+                            type="number"
+                            min={0}
+                            max={maxValue}
+                            value={grade ?? ""}
+                            onChange={(e) =>
+                                updateStudentGrade(record.studentId, field, e.target.value)
+                            }
+                            className={hasClaim ? "border-orange-400 bg-orange-50" : ""}
+                            placeholder={`Max: ${maxValue}`}
+                        />
+                    );
+                }
+
+                if (hasClaim) {
+                    return (
+                        <div
+                            className="cursor-pointer bg-orange-100 border-2 border-orange-400 rounded px-2 py-1 hover:bg-orange-200 transition-colors"
+                            onClick={() => handleClaimClick(record.studentId, field as any)}
+                        >
+                            <Badge count={1} size="small" style={{ backgroundColor: '#ff7875' }}>
+                                <span className="font-medium">{grade?.toString() || "-"}</span>
+                            </Badge>
+                            <ExclamationCircleOutlined className="ml-1 text-orange-500" />
+                        </div>
+                    );
+                }
+
+                return grade?.toString() || "-";
+            },
+        })),
+        {
+            title: "Total",
+            key: "total",
+            render: (_: any, record: StudentGradeRow) => {
+                const total = useMemo(() => {
+                    const grades = ["cc1", "sn1", "cc2", "sn2"].map(field => 
+                        getStudentGrade(record.studentId, field as any) || 0
+                    );
+                    return grades.reduce((sum, grade) => sum + grade, 0);
+                }, [record.studentId, editingData]);
+                return total > 0 ? total.toFixed(2) : "-";
+            },
+        },
+    ];
+
+    const studentsWithGrades = new Set<number>();
+    editingData.forEach((g) => {
+        if (g.value !== null && g.value !== undefined) {
+            studentsWithGrades.add(g.studentId);
+        }
+    });
+
+    const attributedGrades = studentsWithGrades.size;
+    const totalStudents = data.length;
+    const totalPendingClaims = studentsWithClaims.reduce((acc, student) => 
+        acc + (student.grades?.flatMap(g => g.claims || []).filter(c => c.status === 'PENDING').length || 0), 0
+    );
+
+    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+        onSearch?.(e.target.value);
+    };
+
+    return (
+        <div>
+            <div className="md:flex justify-between mt-4 mb-2 w-full">
+                <div className="flex md:w-3/4">
+                    <Button
+                        icon={<MagnifyingGlassCircleIcon width={24} />}
+                        className="!text-white"
+                        style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
+                    >
+                        Rechercher
+                    </Button>
+                    <Input
+                        placeholder="Entrez le nom ..."
+                        onChange={handleSearch}
+                        allowClear
+                        style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }}
+                    />
+                </div>
+                <div className="flex items-center justify-center mt-5 md:mt-0">
+                    {isDataEditable ? (
+                        <GradesEdition
+                            editGrades={() => {
+                                setEditingData(data);
+                                onEdit();
+                            }}
+                            confirmGrades={() => {
+                                onConfirm();
+                                setIsDataEditable(false);
+                            }}
+                            setIsTableEditable={setIsDataEditable}
+                        />
+                    ) : (
+                        <EditPvButton
+                            setIsTableEditable={setIsDataEditable}
+                            onEdit={onEdit}
+                        />
+                    )}
+                </div>
+            </div>
+
+            {totalPendingClaims > 0 && (
+                <div className="mb-4">
+                    <Tag color="orange" className="!h-9 !flex !items-center !justify-center !font-bold">
+                        <ExclamationCircleOutlined className="mr-1" />
+                        {totalPendingClaims} revendication(s) en attente
+                    </Tag>
+                </div>
+            )}
+
+            <Table
+                columns={columns}
+                dataSource={data}
+                rowKey="studentId"
+                pagination={{ 
+                    pageSize: 10,
+                    showSizeChanger: true,
+                    showQuickJumper: true,
+                    responsive: true
+                }}
+                scroll={{ x: 800 }}
+                size="small"
+            />
+
+            <div className="flex justify-between mt-4 w-full">
+                <Tag
+                    color={attributedGrades < totalStudents ? "orange" : "green"}
+                    className="!h-9 !flex !items-center !justify-center !font-bold"
+                >
+                    {attributedGrades} notes attribuées pour {totalStudents} étudiants
+                </Tag>
+            </div>
+
+            <Modal
+                title="Traitement de la revendication"
+                open={isClaimModalOpen}
+                onCancel={() => {
+                    setIsClaimModalOpen(false);
+                    setSelectedClaim(null);
+                    setSelectedStudent(null);
+                    setRejectReason("");
+                }}
+                footer={null}
+                width={600}
+            >
+                {selectedStudent && selectedClaim && (
+                    <ReclamationsDetails
+                        student={selectedStudent as any}
+                        currentTopic={selectedStudent.grades[0] as any}
+                        formValues={{
+                            period: selectedClaim.period,
+                            requestedScore: selectedClaim.requestedScore,
+                            cause: selectedClaim.cause,
+                            description: selectedClaim.description
+                        }}
+                        handleOk={() => {}}
+                        handleCancel={() => {}}
+                        hasClaimed={() => false}
+                        isTeacherView={true}
+                        onApprove={handleApproveClaim}
+                        onReject={handleRejectClaim}
+                        rejectReason={rejectReason}
+                        onRejectReasonChange={setRejectReason}
+                    />
+                )}
+            </Modal>
+        </div>
+    );
+};

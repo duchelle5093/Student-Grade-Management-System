@@ -36,11 +36,11 @@ export const EditableGradesTable = ({
     }, [data]);
 
     /** Mapping entre colonnes et labels backend */
-    const periodMap: Record<string, "CC #1" | "SN #1" | "CC #2" | "SN #2"> = {
-        cc1: "CC #1",
-        sn1: "SN #1",
-        cc2: "CC #2",
-        sn2: "SN #2",
+    const periodMap: Record<string, "CC_1" | "SN_1" | "CC_2" | "SN_2"> = {
+        cc1: "CC_1",
+        sn1: "SN_1",
+        cc2: "CC_2",
+        sn2: "SN_2",
     };
 
 

@@ -1,7 +1,7 @@
 export interface GradeClaimReqDto {
-    gradeId: number,
-    reclamationType: string,
-    requestedScore: number,
-    cause: string,
-    description: string,
+    gradeId: number;
+    requestedScore: number;
+    cause: string;
+    period: string; // "CC" ou "SN"
+    description: string;
 }

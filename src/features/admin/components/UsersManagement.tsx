@@ -14,6 +14,9 @@ import {
     Typography,
     Tabs,
     Modal,
+    Checkbox,
+    message,
+    Select,
 } from 'antd';
 import { 
     UserOutlined, 
@@ -24,13 +27,20 @@ import {
     DownloadOutlined,
     EditOutlined,
     DeleteOutlined,
-    FilterOutlined
+    FilterOutlined,
+    FileExcelOutlined,
+    FilePdfOutlined
 } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../../store';
 import { fetchAllStudents, fetchAllTeachers, deleteUser } from '../actions';
 import { CreateUserModal } from './CreateUserModal';
+import { ExportModal } from './ExportModal';
 import { useNotification } from '../../../contexts';
 import {AppButton} from "../../../components";
+import { exportUsersToExcel, exportUsersToPDF } from '../../../utils/exportUtils';
+import { exportSimplePDF } from '../../../utils/simplePDF.tsx';
+import { adminReportsService } from '../../../api/configs';
+import { saveAs } from 'file-saver';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -60,7 +70,12 @@ export const UsersManagement = () => {
     const [searchText, setSearchText] = useState('');
     const [activeTab, setActiveTab] = useState('students');
     const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
+    const [isExportModalVisible, setIsExportModalVisible] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
+    const [selectedStudents, setSelectedStudents] = useState<number[]>([]);
+    const [selectAll, setSelectAll] = useState(false);
+    const [generatingTranscripts, setGeneratingTranscripts] = useState(false);
+    const [selectedPeriod, setSelectedPeriod] = useState('CC_1');
     
     const handleEditUser = (user: any) => {
         console.log('User to edit:', user); // Debug
@@ -120,7 +135,165 @@ Cette action est irréversible.`,
         (student.username || '').toLowerCase().includes(searchText.toLowerCase())
     );
 
+    useEffect(() => {
+        if (selectedStudents.length === filteredStudents.length && filteredStudents.length > 0) {
+            setSelectAll(true);
+        } else {
+            setSelectAll(false);
+        }
+    }, [selectedStudents, filteredStudents]);
+
+    const handleSelectAll = (e: any) => {
+        const checked = e.target.checked;
+        setSelectAll(checked);
+        if (checked) {
+            const allStudentIds = filteredStudents.map(student => student.studentId || student.id);
+            setSelectedStudents(allStudentIds);
+        } else {
+            setSelectedStudents([]);
+        }
+    };
+
+    const handleStudentSelect = (studentId: number, checked: boolean) => {
+        if (checked) {
+            setSelectedStudents(prev => [...prev, studentId]);
+        } else {
+            setSelectedStudents(prev => prev.filter(id => id !== studentId));
+            setSelectAll(false);
+        }
+    };
+
+
+
+    const handleGenerateTranscripts = async () => {
+        if (selectedStudents.length === 0) {
+            message.warning('Veuillez sélectionner au moins un étudiant');
+            return;
+        }
+
+        setGeneratingTranscripts(true);
+        try {
+            const selectedStudentData = filteredStudents.filter(student => 
+                selectedStudents.includes(student.studentId )
+            );
+            
+            console.log('Selected students data:', selectedStudentData.map(s => ({
+                id: s.studentId ,
+                name: `${s.firstName} ${s.lastName}`,
+                level: s.level,
+                username: s.username
+            })));
+
+            // Vérifier que tous les étudiants ont un niveau défini
+            // const studentsWithoutLevel = selectedStudentData.filter(student => !student.level);
+            // if (studentsWithoutLevel.length > 0) {
+            //     const studentNames = studentsWithoutLevel.map(s => `${s.firstName} ${s.lastName}`).join(', ');
+            //     notify({
+            //         type: 'warning',
+            //         message: 'Niveau manquant',
+            //         description: `Les étudiants suivants n'ont pas de niveau défini : ${studentNames}. Veuillez d'abord définir leur niveau.`
+            //     });
+            //     setGeneratingTranscripts(false);
+            //     return;
+            // }
+
+            // Grouper les étudiants par niveau
+            const studentsByLevel = selectedStudentData.reduce((acc, student) => {
+                const level = student.level;
+                if (!acc[level]) acc[level] = [];
+                acc[level].push(student.studentId);
+                return acc;
+            }, {} as Record<string, number[]>);
+            
+            console.log('Students grouped by level:', studentsByLevel);
+
+            // Générer un PDF pour chaque niveau
+            const pdfPromises = Object.entries(studentsByLevel).map(async ([level, studentIds]) => {
+                const exportRequest = {
+                    documentType: 'transcript',
+                    periodLabel: selectedPeriod,
+                    studentIds: studentIds,
+                    level: level
+                };
+                
+                console.log('Generating transcripts for level:', level, 'students:', studentIds, 'request:', exportRequest);
+                const pdfBlob = await adminReportsService.exportPrintTranscripts(exportRequest);
+                console.log('PDF generated for level:', level, 'size:', pdfBlob.size, 'bytes');
+                return pdfBlob;
+            });
+
+            const pdfBlobs = await Promise.all(pdfPromises);
+            
+            if (pdfBlobs.length === 1) {
+                // Un seul niveau : téléchargement direct
+                const filename = selectedStudents.length === 1 
+                    ? `releve_${selectedStudentData[0]?.username || 'etudiant'}.pdf`
+                    : `releves_notes_${selectedStudents.length}_etudiants.pdf`;
+                
+                saveAs(pdfBlobs[0], filename);
+            } else {
+                // Plusieurs niveaux : créer un ZIP
+                try {
+                    const JSZip = (await import('jszip')).default;
+                    const zip = new JSZip();
+                    
+                    Object.keys(studentsByLevel).forEach((level, index) => {
+                        const filename = `releves_${level}_${studentsByLevel[level].length}_etudiants.pdf`;
+                        zip.file(filename, pdfBlobs[index]);
+                    });
+                    
+                    const zipBlob = await zip.generateAsync({ type: 'blob' });
+                    saveAs(zipBlob, `releves_notes_${selectedStudents.length}_etudiants.zip`);
+                } catch (zipError) {
+                    console.warn('JSZip not available, downloading PDFs separately');
+                    // Fallback: télécharger séparément
+                    Object.keys(studentsByLevel).forEach((level, index) => {
+                        const filename = `releves_${level}_${studentsByLevel[level].length}_etudiants.pdf`;
+                        setTimeout(() => saveAs(pdfBlobs[index], filename), index * 500);
+                    });
+                }
+            }
+
+
+
+            notify({
+                type: 'success',
+                message: 'Relevés générés',
+                description: `${selectedStudents.length} relevé(s) de notes généré(s) avec succès`
+            });
+
+            setSelectedStudents([]);
+            setSelectAll(false);
+        } catch (error) {
+            console.error('Erreur génération relevés:', error);
+            notify({
+                type: 'error',
+                message: 'Erreur de génération',
+                description: 'Impossible de générer les relevés de notes. Vérifiez que les étudiants ont des notes.'
+            });
+        } finally {
+            setGeneratingTranscripts(false);
+        }
+    };
+
     const studentColumns = [
+        {
+            title: (
+                <Checkbox 
+                    checked={selectAll}
+                    indeterminate={selectedStudents.length > 0 && selectedStudents.length < filteredStudents.length}
+                    onChange={handleSelectAll}
+                />
+            ),
+            key: 'select',
+            width: 50,
+            render: (record: any) => (
+                <Checkbox
+                    checked={selectedStudents.includes(record.studentId || record.id)}
+                    onChange={(e) => handleStudentSelect(record.studentId || record.id, e.target.checked)}
+                />
+            ),
+        },
         {
             title: 'Utilisateur',
             key: 'user',
@@ -223,7 +396,7 @@ Cette action est irréversible.`,
                 <Table
                     columns={studentColumns}
                     dataSource={filteredStudents}
-                    rowKey={(record) => record.studentId || record.id}
+                    rowKey={(record) => record.studentId}
                     loading={loading}
                     pagination={{
                         pageSize: 10,
@@ -334,35 +507,78 @@ Cette action est irréversible.`,
                 }}
             >
                 {/* Boutons d'action */}
-                <Row justify="end" style={{ marginBottom: 16 }}>
+                <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
                     <Col>
-                        <Space>
-                            <AppButton
-                                icon={<DownloadOutlined />}
-                            >
-                                Exporter
-                            </AppButton>
-                            <AppButton
-                                icon={<PlusOutlined />}
-                                onClick={() => setIsCreateModalVisible(true)}
-                            >
-                                Nouvel Utilisateur
-                            </AppButton>
-                        </Space>
+                        {activeTab === 'students' && selectedStudents.length > 0 && (
+                            <Space size="middle">
+                                <Text strong style={{ color: '#1890ff' }}>
+                                    {selectedStudents.length} étudiant(s) sélectionné(s)
+                                </Text>
+                                <Select
+                                    value={selectedPeriod}
+                                    onChange={setSelectedPeriod}
+                                    style={{ width: 140 }}
+                                    placeholder="Choisir période"
+                                >
+                                    <Select.Option value="CC_1">CC Semestre 1</Select.Option>
+                                    <Select.Option value="SN_1">SN Semestre 1</Select.Option>
+                                    <Select.Option value="CC_2">CC Semestre 2</Select.Option>
+                                    <Select.Option value="SN_2">SN Semestre 2</Select.Option>
+                                </Select>
+                                <Button
+                                    type="primary"
+                                    icon={<FilePdfOutlined />}
+                                    loading={generatingTranscripts}
+                                    onClick={handleGenerateTranscripts}
+                                    size="large"
+                                    style={{ 
+                                        backgroundColor: '#ff4d4f', 
+                                        borderColor: '#ff4d4f',
+                                        fontWeight: 'bold'
+                                    }}
+                                >
+                                    Générer Relevés ({selectedStudents.length})
+                                </Button>
+                            </Space>
+                        )}
+                    </Col>
+                    <Col>
+                        <AppButton
+                            icon={<PlusOutlined />}
+                            onClick={() => setIsCreateModalVisible(true)}
+                            size="large"
+                        >
+                            Nouvel Utilisateur
+                        </AppButton>
                     </Col>
                 </Row>
 
-                {/* Barre de recherche */}
+                {/* Barre de recherche et aide */}
                 <Row style={{ marginBottom: 16 }}>
                     <Col span={24}>
-                        <Search
-                            placeholder="Rechercher par nom, email ou username..."
-                            allowClear
-                            size="large"
-                            prefix={<SearchOutlined />}
-                            onChange={(e) => setSearchText(e.target.value)}
-                            style={{ borderRadius: '8px' }}
-                        />
+                        <Space direction="vertical" style={{ width: '100%' }}>
+                            <Search
+                                placeholder="Rechercher par nom, email ou username..."
+                                allowClear
+                                size="large"
+                                prefix={<SearchOutlined />}
+                                onChange={(e) => setSearchText(e.target.value)}
+                                style={{ borderRadius: '8px' }}
+                            />
+                            {activeTab === 'students' && selectedStudents.length === 0 && (
+                                <div style={{ 
+                                    padding: '12px 16px', 
+                                    backgroundColor: '#f0f9ff', 
+                                    border: '1px solid #bae7ff',
+                                    borderRadius: '6px',
+                                    color: '#1890ff'
+                                }}>
+                                    <Text style={{ fontSize: '14px' }}>
+                                        📝 Sélectionnez un ou plusieurs étudiants pour générer leurs relevés de notes
+                                    </Text>
+                                </div>
+                            )}
+                        </Space>
                     </Col>
                 </Row>
 
@@ -389,6 +605,11 @@ Cette action est irréversible.`,
                     dispatch(fetchAllTeachers());
                 }}
                 editingUser={editingUser}
+            />
+            
+            <ExportModal
+                visible={isExportModalVisible}
+                onCancel={() => setIsExportModalVisible(false)}
             />
         </div>
     );

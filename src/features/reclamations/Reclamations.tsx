@@ -8,6 +8,7 @@ import {StudentDataResDto, StudentTopicResDto} from "../../api/reponse-dto/stude
 import {GradeClaimReqDto} from "../../api/request-dto/gradeClaim.req.dto.ts";
 import {useAppDispatch} from "../../store";
 import {submitGradeClaim} from "../grades";
+import { useNotification } from "../../contexts";
 
 
 export default function Reclamations({
@@ -16,6 +17,7 @@ export default function Reclamations({
   handleCancel,
   currentTopic,
   formValues,
+  setFormValues,
   hasClaimed
   
 }: {
@@ -24,32 +26,57 @@ export default function Reclamations({
   handleCancel: () => void;
   currentTopic: StudentTopicResDto | null;
   formValues: ReclamationValuesProps;
-  setFormValues: (payload: ReclamationValuesProps) => void;
+  setFormValues: (payload: any) => void;
   hasClaimed: (code: string) => boolean;
 }) {
  
 
   const ReclamationForm = () => {
       const { handleNext } = useContext(StepperContext);
-      const dispatch = useAppDispatch()
+      const dispatch = useAppDispatch();
+      const { notify } = useNotification();
 
 
-    const onFinish = (values: GradeClaimReqDto) => {
+    const onFinish = async (values: any) => {
+      // Sauvegarder les valeurs du formulaire
+      setFormValues(values);
+      
+      // Mapper le type de réclamation vers periodLabel
+      const periodLabel = values.period === 'CC' 
+        ? (currentTopic?.semester === 'S1' ? 'CC_1' : 'CC_2')
+        : (currentTopic?.semester === 'S1' ? 'SN_1' : 'SN_2');
 
       const grade = student?.grades.find(
         grade => grade.subjectCode === currentTopic?.code &&
-             grade.type === values.reclamationType.toUpperCase()
+                 grade.periodLabel === periodLabel
       );
 
+      if (!grade) {
+        notify({
+          type: 'error',
+          message: 'Erreur',
+          description: 'Note non trouvée pour cette matière et période'
+        });
+        return;
+      }
+
       const payload: GradeClaimReqDto = {
-          reclamationType: 'cc',
-          gradeId: grade?.id || 0,
-          requestedScore: values.requestedScore,
-          cause: values.cause,
-          description: values.description
+        gradeId: grade.id,
+        requestedScore: parseFloat(values.requestedScore),
+        cause: values.cause,
+        period: values.period,
+        description: values.description
       };
-      dispatch(submitGradeClaim(payload));
-      handleNext?.();
+      
+      try {
+        const result = await dispatch(submitGradeClaim(payload));
+        if (submitGradeClaim.fulfilled.match(result)) {
+          handleNext?.();
+        }
+      } catch (error) {
+        // L'erreur sera affichée automatiquement par le système
+        console.error('Erreur soumission réclamation:', error);
+      }
     };
 
     return (
@@ -68,7 +95,7 @@ export default function Reclamations({
                 Type de note contestée
               </span>
             }
-            name="reclamationType"
+            name="period"
             rules={[
               {
                 required: true,
@@ -81,8 +108,8 @@ export default function Reclamations({
               placeholder="Sélectionnez le type de note"
               size="large"
               options={[
-                { value: "cc", label: "CC" },
-                { value: "sn", label: "SN" },
+                { value: "CC", label: "CC" },
+                { value: "SN", label: "SN" },
               ]}
             />
           </Form.Item>  

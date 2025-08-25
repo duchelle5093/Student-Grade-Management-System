@@ -9,12 +9,11 @@ export interface LoginResDto{
     username: string;
     role: string;
     authorities: [],
-    mustChangePassword: boolean
+    mustChangePassword: boolean;
+    levels?: string[]; // Niveaux enseignés par l'enseignant
 }
 
 export interface ChangePasswordReqDto{
-   currentPassword: string;
    newPassword: string ;
    confirmPassword: string;
-   oldPassword: string
 }

@@ -3,25 +3,35 @@ import GradesTable from "./views/GradesTable.tsx";
 import {useAppDispatch, useAppSelector} from "../../store";
 import { StudentDataResDto } from "../../api/reponse-dto/student.res.dto";
 import {fetchStudentGrades} from "../grades";
+import { mockStudentData } from "./mockData";
 
-const countFailedSubjects = (studentData: StudentDataResDto ): { failed: number; passed: number } => {
+const countFailedSubjects = (studentData: StudentDataResDto): { failed: number; passed: number } => {
+    if (!studentData?.grades?.length) return { failed: 0, passed: 0 };
 
-    if (!studentData?.topics?.length) return { failed: 0, passed: 0 };
+    // Regrouper les notes par matière
+    const grouped = studentData.grades.reduce((acc, grade) => {
+        const key = grade.subjectCode;
+        if (!acc[key]) {
+            acc[key] = { cc: 0, sn: 0 };
+        }
+        if (grade.periodLabel === 'CC_1' || grade.periodLabel === 'CC_2') {
+            acc[key].cc = grade.value;
+        }
+        if (grade.periodLabel === 'SN_1' || grade.periodLabel === 'SN_2') {
+            acc[key].sn = grade.value;
+        }
+        return acc;
+    }, {} as Record<string, { cc: number; sn: number }>);
 
     let failed = 0;
     let passed = 0;
 
-    studentData.topics.forEach(topic => {
-        const cc = topic.cc || 0;
-        const sn = topic.sn || 0;
-        const total = cc + sn;
-
-        if (total < 50) {
-            failed++;
-        } else {
-            passed++;
-        }
+    Object.values(grouped).forEach(subject => {
+        const total = subject.cc + subject.sn;
+        if (total >= 50) passed++;
+        else failed++;
     });
+
     return { failed, passed };
 };
 
@@ -30,12 +40,17 @@ export default function StudentPage() {
     const student = useAppSelector((state) => state.user.profile);
     const studentGrades =  useAppSelector((state) => state.grades.studentGrades);
 
-    const { failed, passed } = useMemo(
-        () => countFailedSubjects(student),
-        [student]
-    );
+    // Utiliser les mock data si pas de données réelles
+    const currentStudentData = student?.grades?.length > 0 
+        ? student 
+        : (Array.isArray(studentGrades) && studentGrades.length > 0)
+            ? studentGrades.find(grade => grade.studentId === student?.id)
+            : mockStudentData;
 
-    const studentGrade = Array.isArray(studentGrades) ? studentGrades.find(grade => grade.studentId === student?.id) : null;
+    const { failed, passed } = useMemo(
+        () => countFailedSubjects(currentStudentData),
+        [currentStudentData]
+    );
 
     useEffect(()=>{
         dispatch(fetchStudentGrades(student?.id))
@@ -59,8 +74,8 @@ export default function StudentPage() {
 
             <div className={'w-full flex justify-between my-12'}>
                 <div>
-                    <p>Période en cours : <span>{studentGrade?.semesterName}</span></p>
-                    <p>Niveau : <span>Étudiant</span></p>
+                    <p>Période en cours : <span>{currentStudentData?.semesterName || 'Non définie'}</span></p>
+                    <p>Niveau : <span>{currentStudentData?.level || 'Étudiant'}</span></p>
                 </div>
                 <div>
                     <p>Échec : <span className="text-red-500 font-bold">{failed}</span></p>
@@ -68,7 +83,7 @@ export default function StudentPage() {
                 </div>
             </div>
 
-            <GradesTable student={studentGrade} />
+            <GradesTable student={currentStudentData} />
         </div>
     );
 }

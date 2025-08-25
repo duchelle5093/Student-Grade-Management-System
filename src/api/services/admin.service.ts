@@ -224,4 +224,6 @@ export class AdminService {
         const response = await this._client.get(`${adminApis.GET_SEMESTER_WINDOWS}/${id}/windows`);
         return response.data;
     }
+
+
 }

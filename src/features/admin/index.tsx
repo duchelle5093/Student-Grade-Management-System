@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Modal, Select, Typography, Tabs } from 'antd';
+import { Button, Modal, Select, Typography, Tabs, DatePicker, Spin } from 'antd';
 import { EditOutlined } from '@ant-design/icons';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import {AppButton} from "../../components";
+import { AppButton } from "../../components";
+import { useAppDispatch, useAppSelector } from '../../store';
+import { fetchAllGradingWindows, updateGradingWindow } from './grading-windows-actions';
+import { useNotification } from '../../contexts';
+import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
 
@@ -22,17 +26,24 @@ interface AcademicPeriod {
 }
 
 const AcademicPeriodsManager = () => {
+    const dispatch = useAppDispatch();
+    const { notify } = useNotification();
+    const { loading } = useAppSelector(state => state.admin);
+    
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [selectedPeriod, setSelectedPeriod] = useState<AcademicPeriod | null>(null);
     const [activeTab, setActiveTab] = useState('start');
     const [calendarDate, setCalendarDate] = useState('2020-12-01');
-
-    // Données simulées du backend
-    const periods = [
+    const [editedStartDate, setEditedStartDate] = useState<string>('');
+    const [editedEndDate, setEditedEndDate] = useState<string>('');
+    const [backendPeriods, setBackendPeriods] = useState<AcademicPeriod[]>([]);
+    
+    // Données mockées (fallback uniquement)
+    const mockPeriods = [
             {
                 id: 'cc1',
                 name: 'Contrôle continu #1',
-                shortName: 'CC #1',
+                shortName: 'CC_1',
                 type: 'CC' as const,
                 semester: 1,
                 startDate: '2020-10-01',
@@ -44,7 +55,7 @@ const AcademicPeriodsManager = () => {
             {
                 id: 'sn1',
                 name: 'Session normale #1',
-                shortName: 'SN #1',
+                shortName: 'SN_1',
                 type: 'SN' as const,
                 semester: 1,
                 startDate: '2020-11-28',
@@ -56,7 +67,7 @@ const AcademicPeriodsManager = () => {
             {
                 id: 'cc2',
                 name: 'Contrôle continu #2',
-                shortName: 'CC #2',
+                shortName: 'CC_2',
                 type: 'CC' as const,
                 semester: 2,
                 startDate: '2021-02-02',
@@ -68,7 +79,7 @@ const AcademicPeriodsManager = () => {
             {
                 id: 'sn2',
                 name: 'Session normale #2',
-                shortName: 'SN #2',
+                shortName: 'SN_2',
                 type: 'SN' as const,
                 semester: 2,
                 startDate: '2021-03-15',
@@ -78,6 +89,35 @@ const AcademicPeriodsManager = () => {
                 order: 4
             }
         ];
+    
+    // Charger les périodes du backend
+    useEffect(() => {
+        const loadPeriods = async () => {
+            try {
+                const result = await dispatch(fetchAllGradingWindows()).unwrap();
+                const mappedPeriods = result.map((period: any) => ({
+                    id: period.id.toString(),
+                    name: period.name,
+                    shortName: period.shortName,
+                    type: period.type as 'CC' | 'SN',
+                    semester: period.semester,
+                    startDate: period.startDate,
+                    endDate: period.endDate,
+                    color: period.color || '#1890ff',
+                    isActive: period.isActive,
+                    order: period.order
+                }));
+                setBackendPeriods(mappedPeriods);
+            } catch (error) {
+                console.warn('Erreur chargement périodes, utilisation des données mockées');
+                setBackendPeriods([]);
+            }
+        };
+        loadPeriods();
+    }, [dispatch]);
+    
+    // Utiliser les données backend ou fallback vers mock
+    const periods = backendPeriods.length > 0 ? backendPeriods : mockPeriods;
 
     const months = [
         { name: 'Oct', bg: '#E5E7EB' },
@@ -115,6 +155,8 @@ const AcademicPeriodsManager = () => {
 
     const handlePeriodClick = (period: AcademicPeriod) => {
         setSelectedPeriod(period);
+        setEditedStartDate(period.startDate);
+        setEditedEndDate(period.endDate);
         setIsModalVisible(true);
         // Définir la date du calendrier selon la période
         const periodDate = new Date(period.startDate);
@@ -125,14 +167,66 @@ const AcademicPeriodsManager = () => {
         setIsModalVisible(false);
         setSelectedPeriod(null);
         setActiveTab('start');
+        setEditedStartDate('');
+        setEditedEndDate('');
     };
 
-    const handleModalConfirm = () => {
-        // Logique de sauvegarde ici
-        console.log('Sauvegarde de la période:', selectedPeriod);
+    const handleModalConfirm = async () => {
+        if (!selectedPeriod) return;
+        
+        try {
+            const payload = {
+                semesterId: selectedPeriod.semester,
+                name: selectedPeriod.name,
+                shortName: selectedPeriod.shortName,
+                type: selectedPeriod.type,
+                startDate: editedStartDate,
+                endDate: editedEndDate,
+                color: selectedPeriod.color,
+                isActive: selectedPeriod.isActive,
+                order: selectedPeriod.order
+            };
+            
+            await dispatch(updateGradingWindow({ 
+                id: parseInt(selectedPeriod.id), 
+                windowData: payload 
+            })).unwrap();
+            
+            notify({
+                type: 'success',
+                message: 'Période mise à jour',
+                description: `La période ${selectedPeriod.shortName} a été modifiée avec succès`
+            });
+            
+            // Recharger les périodes
+            const result = await dispatch(fetchAllGradingWindows()).unwrap();
+            const mappedPeriods = result.map((period: any) => ({
+                id: period.id.toString(),
+                name: period.name,
+                shortName: period.shortName,
+                type: period.type as 'CC' | 'SN',
+                semester: period.semester,
+                startDate: period.startDate,
+                endDate: period.endDate,
+                color: period.color || '#1890ff',
+                isActive: period.isActive,
+                order: period.order
+            }));
+            setBackendPeriods(mappedPeriods);
+            
+        } catch (error) {
+            notify({
+                type: 'error',
+                message: 'Erreur de mise à jour',
+                description: 'Impossible de modifier la période'
+            });
+        }
+        
         setIsModalVisible(false);
         setSelectedPeriod(null);
         setActiveTab('start');
+        setEditedStartDate('');
+        setEditedEndDate('');
     };
 
     const getCalendarEvents = () => {
@@ -358,14 +452,20 @@ const AcademicPeriodsManager = () => {
 
             {/* Modal d'édition */}
             <Modal
-                title={`Édition date de la période du ${selectedPeriod?.shortName || 'CC#1'}`}
+                title={`Édition date de la période du ${selectedPeriod?.shortName || 'CC_1'}`}
                 open={isModalVisible}
                 onCancel={handleModalCancel}
                 footer={[
                     <Button key="cancel" onClick={handleModalCancel}>
                         Annuler
                     </Button>,
-                    <Button key="confirm" type="primary" onClick={handleModalConfirm}>
+                    <Button 
+                        key="confirm" 
+                        type="primary" 
+                        onClick={handleModalConfirm}
+                        loading={loading}
+                        disabled={!editedStartDate || !editedEndDate}
+                    >
                         Confirmer
                     </Button>
                 ]}
@@ -374,52 +474,22 @@ const AcademicPeriodsManager = () => {
                 <Tabs activeKey={activeTab} onChange={setActiveTab}>
                     <Tabs.TabPane tab="Date de début" key="start">
                         <div style={{ marginBottom: '16px' }}>
-                            <Select defaultValue="16" style={{ width: 80, marginRight: 8 }}>
-                                {Array.from({length: 31}, (_, i) => (
-                                    <Select.Option key={i+1} value={i+1}>{i+1}</Select.Option>
-                                ))}
-                            </Select>
-                            <Select defaultValue="Déc" style={{ width: 80, marginRight: 8 }}>
-                                <Select.Option value="Oct">Oct</Select.Option>
-                                <Select.Option value="Nov">Nov</Select.Option>
-                                <Select.Option value="Déc">Déc</Select.Option>
-                                <Select.Option value="Jan">Jan</Select.Option>
-                                <Select.Option value="Fév">Fév</Select.Option>
-                                <Select.Option value="Mar">Mar</Select.Option>
-                                <Select.Option value="Avr">Avr</Select.Option>
-                                <Select.Option value="Mai">Mai</Select.Option>
-                                <Select.Option value="Juin">Juin</Select.Option>
-                            </Select>
-                            <Select defaultValue="2025" style={{ width: 80 }}>
-                                <Select.Option value="2025">2025</Select.Option>
-                                <Select.Option value="2026">2026</Select.Option>
-                                <Select.Option value="2027">2027</Select.Option>
-                            </Select>
+                            <DatePicker
+                                value={editedStartDate ? dayjs(editedStartDate) : null}
+                                onChange={(date) => setEditedStartDate(date ? date.format('YYYY-MM-DD') : '')}
+                                style={{ width: '100%' }}
+                                placeholder="Sélectionner la date de début"
+                            />
                         </div>
                     </Tabs.TabPane>
                     <Tabs.TabPane tab="Date de fin" key="end">
                         <div style={{ marginBottom: '16px' }}>
-                            <Select defaultValue="28" style={{ width: 80, marginRight: 8 }}>
-                                {Array.from({length: 31}, (_, i) => (
-                                    <Select.Option key={i+1} value={i+1}>{i+1}</Select.Option>
-                                ))}
-                            </Select>
-                            <Select defaultValue="Nov" style={{ width: 80, marginRight: 8 }}>
-                                <Select.Option value="Oct">Oct</Select.Option>
-                                <Select.Option value="Nov">Nov</Select.Option>
-                                <Select.Option value="Déc">Déc</Select.Option>
-                                <Select.Option value="Jan">Jan</Select.Option>
-                                <Select.Option value="Fév">Fév</Select.Option>
-                                <Select.Option value="Mar">Mar</Select.Option>
-                                <Select.Option value="Avr">Avr</Select.Option>
-                                <Select.Option value="Mai">Mai</Select.Option>
-                                <Select.Option value="Juin">Juin</Select.Option>
-                            </Select>
-                            <Select defaultValue="2026" style={{ width: 80 }}>
-                                <Select.Option value="2025">2025</Select.Option>
-                                <Select.Option value="2026">2026</Select.Option>
-                                <Select.Option value="2027">2027</Select.Option>
-                            </Select>
+                            <DatePicker
+                                value={editedEndDate ? dayjs(editedEndDate) : null}
+                                onChange={(date) => setEditedEndDate(date ? date.format('YYYY-MM-DD') : '')}
+                                style={{ width: '100%' }}
+                                placeholder="Sélectionner la date de fin"
+                            />
                         </div>
                     </Tabs.TabPane>
                 </Tabs>

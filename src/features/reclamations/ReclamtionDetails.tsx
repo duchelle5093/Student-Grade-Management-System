@@ -36,9 +36,9 @@ export const ReclamationsDetails = ({
 
     // Déterminer la note actuelle selon le type de note contestée
     let CurrentGrade = '';
-    if (formValues.reclamationType === 'cc') {
+    if (formValues.period === 'CC') {
         CurrentGrade = currentTopic?.cc !== null && currentTopic?.cc !== undefined ? String(currentTopic?.cc) : '-';
-    } else if (formValues.reclamationType === 'sn') {
+    } else if (formValues.period === 'SN') {
         CurrentGrade = currentTopic?.sn !== null && currentTopic?.sn !== undefined ? String(currentTopic?.sn) : '-';
     }
 
@@ -60,10 +60,10 @@ export const ReclamationsDetails = ({
                 <div className="mb-4 p-3 border rounded bg-gray-50 shadow-sm">
                     <div className="font-bold mb-1 text-gray-700 text-center">Matière: {currentTopic?.title}</div>
                     <div className="flex flex-col gap-4">
-                        <div><span className="font-semibold">Type de note contestée:</span> {formValues.reclamationType.toUpperCase()}</div>
+                        <div><span className="font-semibold">Type de note contestée:</span> {formValues.period}</div>
                         <div><span className="font-semibold">Note actuelle:</span> {CurrentGrade}</div>
-                        <div><span className="font-semibold">Note souhaitée:</span> {formValues.expectedGrade}</div>
-                        <div><span className="font-semibold">Cause:</span> {formValues.reclamationReason}</div>
+                        <div><span className="font-semibold">Note souhaitée:</span> {formValues.requestedScore}</div>
+                        <div><span className="font-semibold">Cause:</span> {formValues.cause}</div>
                         <div><span className="font-semibold">Description:</span> {formValues.description}</div>
                     </div>
                 </div>

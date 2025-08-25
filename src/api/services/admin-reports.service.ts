@@ -20,6 +20,10 @@ const adminReportsApis = {
     EXPORT_STUDENTS: 'admin/exports/students',
     EXPORT_TEACHERS: 'admin/exports/teachers',
     
+    // Export PDF (nouvelles APIs)
+    EXPORT_PRINT: 'export/print',
+    EXPORT_PUBLISH: 'export/publish',
+    
     // Statistiques
     GET_ADMIN_STATS: 'admin/stats',
     GET_GRADE_STATS: 'admin/stats/grades',
@@ -104,6 +108,33 @@ export class AdminReportsService {
         const response = await this._client.post(adminReportsApis.IMPORT_TEACHERS, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
+        return response.data;
+    }
+
+    // Nouvelles méthodes pour les APIs export/print et export/publish
+    async exportPrintTranscripts(request: {
+        level?: string;
+        subjectId?: number;
+        documentType: string;
+        periodLabel?: string;
+        semesterId?: number;
+        studentIds?: number[];
+    }): Promise<Blob> {
+        const response = await this._client.post(adminReportsApis.EXPORT_PRINT, request, {
+            responseType: 'blob' // Important pour recevoir le PDF
+        });
+        return response.data;
+    }
+
+    async exportPublishTranscripts(request: {
+        level?: string;
+        subjectId?: number;
+        documentType: string;
+        periodLabel?: string;
+        semesterId?: number;
+        studentIds?: number[];
+    }): Promise<any> {
+        const response = await this._client.post(adminReportsApis.EXPORT_PUBLISH, request);
         return response.data;
     }
 }

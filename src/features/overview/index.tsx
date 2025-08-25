@@ -77,10 +77,14 @@ export const Overview = () => {
         const activeStudents = students.filter(s => s.role === 'STUDENT').length;
         
         // Répartition par niveau
-        const studentsPerLevel = ['LEVEL1', 'LEVEL2', 'LEVEL3', 'LEVEL4', 'LEVEL5'].map(level => ({
-            level,
-            count: students.filter(s => s.level === level).length
-        }));
+        const studentsPerLevel = [
+            { level: 'LEVEL1', count: students.filter(s => s.level === 'LEVEL1').length },
+            { level: 'LEVEL2', count: students.filter(s => s.level === 'LEVEL2').length },
+            { level: 'LEVEL3', count: students.filter(s => s.level === 'LEVEL3').length },
+            { level: 'LEVEL4', count: students.filter(s => s.level === 'LEVEL4').length },
+            { level: 'LEVEL5', count: students.filter(s => s.level === 'LEVEL5').length },
+            { level: 'NON_DEFINI', count: students.filter(s => !s.level || s.level === null).length }
+        ];
 
         // Matières par département
         const subjectsPerDepartment = departments.map(dept => ({
@@ -109,7 +113,7 @@ export const Overview = () => {
 
     // Configuration des graphiques
     const levelChartData = {
-        labels: ['Licence 1', 'Licence 2', 'Licence 3', 'Master 1', 'Master 2'],
+        labels: ['Licence 1', 'Licence 2', 'Licence 3', 'Master 1', 'Master 2', 'Non défini'],
         datasets: [{
             data: stats.studentsPerLevel.map(item => item.count),
             backgroundColor: [
@@ -117,7 +121,8 @@ export const Overview = () => {
                 '#36CFC9',
                 '#5CDBD3',
                 '#B37FEB',
-                '#FF85C0'
+                '#FF85C0',
+                '#f5222d'
             ],
             borderWidth: 0
         }]
