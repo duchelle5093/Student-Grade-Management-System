@@ -1,14 +1,26 @@
 import {StudentTopicResDto} from "./student.res.dto.ts";
 import {Role} from "../enums";
 
-export interface userProfileResDto extends StudentTopicResDto{
+interface Department {
+    id: number;
+    name: string;
+    subjects: any;
+}
+
+interface LevelInfo {
+    level: string; // "L1", "L2", "L3", "L4", "L5"
+    departments: Department[];
+}
+
+export interface userProfileResDto {
     id: number;
     firstName: string;
     lastName: string;
     email: string;
     username: string;
     role: string;
-    levels: string[];
+    levels: LevelInfo[];
+    subjects: any;
 }
 
 interface Topic {

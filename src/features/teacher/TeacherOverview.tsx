@@ -129,9 +129,9 @@ export const TeacherOverview = () => {
                                                     {item.count}
                                                 </Avatar>
                                             }
-                                            title={<Text strong>{item.level.replace('LEVEL', 'Niveau ')}</Text>}
+                                            title={<Text strong>{item.level.replace('LEVEL1', 'Licence 1').replace('LEVEL2', 'Licence 2').replace('LEVEL3', 'Licence 3').replace('LEVEL4', 'Master 1').replace('LEVEL5', 'Master 2')}</Text>}
                                             description={
-                                                <Tag color={item.level.startsWith('LEVEL1') || item.level.startsWith('LEVEL2') || item.level.startsWith('LEVEL3') ? 'blue' : 'purple'}>
+                                                <Tag color={['LEVEL1', 'LEVEL2', 'LEVEL3'].includes(item.level) ? 'blue' : 'purple'}>
                                                     {item.percentage}% du total
                                                 </Tag>
                                             }
