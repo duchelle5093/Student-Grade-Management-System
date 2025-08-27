@@ -59,8 +59,8 @@ export class GradeService {
         return response.data;
     }
 
-    async getStudentGrades(studentId: number): Promise<StudentDataResDto[]> {
-        const response = await this._client.get<StudentDataResDto[]>(`${gradeApis.GET_STUDENT_GRADES}/${studentId}`);
+    async getStudentGrades(studentId: number): Promise<StudentDataResDto> {
+        const response = await this._client.get<StudentDataResDto>(`${gradeApis.GET_STUDENT_GRADES}/${studentId}`);
         return response.data;
     }
 

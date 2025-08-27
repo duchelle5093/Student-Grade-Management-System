@@ -6,7 +6,7 @@ export interface GradeResDto {
     subjectId: number;
     semesterId: number;
     value: number;
-    type: 'ASSIGNMENT' | 'EXAM' | 'QUIZ' | 'PROJECT';
+    type: 'CC_1' | 'SN_1' |'CC_2' | 'SN_2';
     enteredByTeacherId: number;
     periodLabel: string;
     comments?: string;
@@ -19,9 +19,10 @@ export interface CreateGradeReqDto {
     subjectId: number;
     semesterId: number;
     value: number;
-    type: 'ASSIGNMENT' | 'EXAM' | 'QUIZ' | 'PROJECT';
+    maxValue?: number;
+    type: 'CC_1' | 'SN_1' |'CC_2' | 'SN_2';
     enteredBy: number;
-    periodLabel: string;
+    periodType: 'CC_1' | 'CC_2' | 'SN_1' | 'SN_2';
     comments?: string;
 }
 
@@ -30,34 +31,36 @@ export interface CreateGradeByCodeReqDto {
     subjectCode: string;
     semesterId: number;
     value: number;
-    type: 'ASSIGNMENT' | 'EXAM' | 'QUIZ' | 'PROJECT';
+    maxValue?: number;
+    type: 'CC_1' | 'SN_1' |'CC_2' | 'SN_2';
     comments?: string;
-    periodLabel: string;
+    periodType: 'CC_1' | 'CC_2' | 'SN_1' | 'SN_2';
 }
 
 export interface UpdateGradeReqDto {
     value: number;
-    type: 'ASSIGNMENT' | 'EXAM' | 'QUIZ' | 'PROJECT';
+    maxValue?: number;
+    type: 'CC_1' | 'SN_1' |'CC_2' | 'SN_2';
     comments?: string;
 }
 
 export interface TeacherGradeResDto {
     id: number;
     createdDate: string;
-    lastModifiedDate: string | null;
-    enteredBy: number;
-    enteredByName: string;
-    passed: boolean;
-    creditsEarned: number;
+    lastModifiedDate: string;
     studentId: number;
     studentName: string;
     subjectId: number;
     subjectName: string;
     subjectCode: string;
-    value: number;
-    type: string;
-    periodLabel: PeriodLabel
-    comments?: string;
     semesterId: number;
     semesterName: string;
+    value: number;
+    type: 'CC_1' | 'SN_1' | 'CC_2' | 'SN_2';
+    periodLabel: string; // "CC_1", "CC_2", "SN_1", "SN_2"
+    comments: string;
+    enteredBy: number;
+    enteredByName: string;
+    passed: boolean;
+    creditsEarned: number;
 }

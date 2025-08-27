@@ -16,7 +16,7 @@ interface AcademicPeriod {
     id: string;
     name: string;
     shortName: string;
-    type: 'CC' | 'SN';
+    type: 'CC_1' | 'SN_1' |'CC_2' | 'SN_2';
     semester: 1 | 2;
     startDate: string;
     endDate: string;
@@ -28,7 +28,7 @@ interface AcademicPeriod {
 const AcademicPeriodsManager = () => {
     const dispatch = useAppDispatch();
     const { notify } = useNotification();
-    const { loading } = useAppSelector(state => state.admin);
+    const { loading, gradingWindows } = useAppSelector(state => state.admin);
     
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [selectedPeriod, setSelectedPeriod] = useState<AcademicPeriod | null>(null);
@@ -36,7 +36,7 @@ const AcademicPeriodsManager = () => {
     const [calendarDate, setCalendarDate] = useState('2020-12-01');
     const [editedStartDate, setEditedStartDate] = useState<string>('');
     const [editedEndDate, setEditedEndDate] = useState<string>('');
-    const [backendPeriods, setBackendPeriods] = useState<AcademicPeriod[]>([]);
+    const [isSemesterModalVisible, setIsSemesterModalVisible] = useState(false);
     
     // Données mockées (fallback uniquement)
     const mockPeriods = [
@@ -44,7 +44,7 @@ const AcademicPeriodsManager = () => {
                 id: 'cc1',
                 name: 'Contrôle continu #1',
                 shortName: 'CC_1',
-                type: 'CC' as const,
+                type: 'CC_1' as const,
                 semester: 1,
                 startDate: '2020-10-01',
                 endDate: '2020-11-28',
@@ -56,7 +56,7 @@ const AcademicPeriodsManager = () => {
                 id: 'sn1',
                 name: 'Session normale #1',
                 shortName: 'SN_1',
-                type: 'SN' as const,
+                type: 'SN_1' as const,
                 semester: 1,
                 startDate: '2020-11-28',
                 endDate: '2021-02-02',
@@ -68,7 +68,7 @@ const AcademicPeriodsManager = () => {
                 id: 'cc2',
                 name: 'Contrôle continu #2',
                 shortName: 'CC_2',
-                type: 'CC' as const,
+                type: 'CC_2' as const,
                 semester: 2,
                 startDate: '2021-02-02',
                 endDate: '2021-03-15',
@@ -80,7 +80,7 @@ const AcademicPeriodsManager = () => {
                 id: 'sn2',
                 name: 'Session normale #2',
                 shortName: 'SN_2',
-                type: 'SN' as const,
+                type: 'SN_2' as const,
                 semester: 2,
                 startDate: '2021-03-15',
                 endDate: '2021-06-25',
@@ -92,43 +92,38 @@ const AcademicPeriodsManager = () => {
     
     // Charger les périodes du backend
     useEffect(() => {
-        const loadPeriods = async () => {
-            try {
-                const result = await dispatch(fetchAllGradingWindows()).unwrap();
-                const mappedPeriods = result.map((period: any) => ({
-                    id: period.id.toString(),
-                    name: period.name,
-                    shortName: period.shortName,
-                    type: period.type as 'CC' | 'SN',
-                    semester: period.semester,
-                    startDate: period.startDate,
-                    endDate: period.endDate,
-                    color: period.color || '#1890ff',
-                    isActive: period.isActive,
-                    order: period.order
-                }));
-                setBackendPeriods(mappedPeriods);
-            } catch (error) {
-                console.warn('Erreur chargement périodes, utilisation des données mockées');
-                setBackendPeriods([]);
-            }
-        };
-        loadPeriods();
+        dispatch(fetchAllGradingWindows());
     }, [dispatch]);
+    
+    // Mapper les données backend vers le format AcademicPeriod
+    const backendPeriods: AcademicPeriod[] = gradingWindows.map(period => ({
+        id: period.id.toString(),
+        name: period.name,
+        shortName: period.shortName,
+        type: (period.periodLabel || period.shortName) as 'CC_1' | 'SN_1' | 'CC_2' | 'SN_2',
+        semester: period.semester,
+        startDate: period.startDate,
+        endDate: period.endDate,
+        color: period.color === 'string' ? '#1890ff' : (period.color || '#1890ff'),
+        isActive: period.isActive,
+        order: period.order
+    }));
     
     // Utiliser les données backend ou fallback vers mock
     const periods = backendPeriods.length > 0 ? backendPeriods : mockPeriods;
 
+    // Générer une année académique standard (9 mois)
     const months = [
+        { name: 'Sep', bg: '#E5E7EB' },
         { name: 'Oct', bg: '#E5E7EB' },
         { name: 'Nov', bg: '#E5E7EB' },
-        { name: 'Déc', bg: '#DBEAFE' },
+        { name: 'Déc', bg: '#E5E7EB' },
         { name: 'Jan', bg: '#DBEAFE' },
         { name: 'Fév', bg: '#DBEAFE' },
-        { name: 'Mar', bg: '#E5E7EB' },
-        { name: 'Avr', bg: '#E5E7EB' },
-        { name: 'Mai', bg: '#E5E7EB' },
-        { name: 'Juin', bg: '#E5E7EB' }
+        { name: 'Mar', bg: '#DBEAFE' },
+        { name: 'Avr', bg: '#DBEAFE' },
+        { name: 'Mai', bg: '#DBEAFE' },
+        { name: 'Juin', bg: '#DBEAFE' }
     ];
 
     const formatDate = (dateStr: string) => {
@@ -140,8 +135,11 @@ const AcademicPeriodsManager = () => {
 
     const calculatePosition = (dateStr: string) => {
         const date = new Date(dateStr);
-        const startYear = new Date(2020, 9, 1);
-        const endYear = new Date(2021, 5, 30);
+        // Année académique : Sep année N à Juin année N+1
+        const currentYear = new Date().getFullYear();
+        const startYear = new Date(currentYear, 8, 1); // 1er septembre
+        const endYear = new Date(currentYear + 1, 5, 30); // 30 juin
+        
         const totalDuration = endYear.getTime() - startYear.getTime();
         const elapsed = date.getTime() - startYear.getTime();
         return Math.max(0, Math.min(100, (elapsed / totalDuration) * 100));
@@ -174,12 +172,55 @@ const AcademicPeriodsManager = () => {
     const handleModalConfirm = async () => {
         if (!selectedPeriod) return;
         
+        // Validation des contraintes d'ordre
+        const newStartDate = new Date(editedStartDate);
+        const newEndDate = new Date(editedEndDate);
+        
+        if (newStartDate >= newEndDate) {
+            notify({
+                type: 'error',
+                message: 'Dates invalides',
+                description: 'La date de début doit être antérieure à la date de fin'
+            });
+            return;
+        }
+        
+        // Trouver la période précédente et suivante selon l'ordre
+        const previousPeriod = periods.find(p => p.order === selectedPeriod.order - 1);
+        const nextPeriod = periods.find(p => p.order === selectedPeriod.order + 1);
+        
+        // Vérifier contrainte avec période précédente
+        if (previousPeriod) {
+            const prevEndDate = new Date(previousPeriod.endDate);
+            if (newStartDate < prevEndDate) {
+                notify({
+                    type: 'error',
+                    message: 'Contrainte d\'ordre violée',
+                    description: `La date de début ne peut pas être antérieure à la fin de ${previousPeriod.shortName} (${formatDate(previousPeriod.endDate)})`
+                });
+                return;
+            }
+        }
+        
+        // Vérifier contrainte avec période suivante
+        if (nextPeriod) {
+            const nextStartDate = new Date(nextPeriod.startDate);
+            if (newEndDate > nextStartDate) {
+                notify({
+                    type: 'error',
+                    message: 'Contrainte d\'ordre violée',
+                    description: `La date de fin ne peut pas être postérieure au début de ${nextPeriod.shortName} (${formatDate(nextPeriod.startDate)})`
+                });
+                return;
+            }
+        }
+        
         try {
             const payload = {
                 semesterId: selectedPeriod.semester,
                 name: selectedPeriod.name,
                 shortName: selectedPeriod.shortName,
-                type: selectedPeriod.type,
+                periodLabel: selectedPeriod.shortName,
                 startDate: editedStartDate,
                 endDate: editedEndDate,
                 color: selectedPeriod.color,
@@ -197,22 +238,6 @@ const AcademicPeriodsManager = () => {
                 message: 'Période mise à jour',
                 description: `La période ${selectedPeriod.shortName} a été modifiée avec succès`
             });
-            
-            // Recharger les périodes
-            const result = await dispatch(fetchAllGradingWindows()).unwrap();
-            const mappedPeriods = result.map((period: any) => ({
-                id: period.id.toString(),
-                name: period.name,
-                shortName: period.shortName,
-                type: period.type as 'CC' | 'SN',
-                semester: period.semester,
-                startDate: period.startDate,
-                endDate: period.endDate,
-                color: period.color || '#1890ff',
-                isActive: period.isActive,
-                order: period.order
-            }));
-            setBackendPeriods(mappedPeriods);
             
         } catch (error) {
             notify({
@@ -403,12 +428,9 @@ const AcademicPeriodsManager = () => {
                     <AppButton
                         btnType={'submit'}
                         icon={<EditOutlined />}
-                        onClick={() => {
-                            const activePeriod = periods.find(p => p.isActive);
-                            if (activePeriod) handlePeriodClick(activePeriod);
-                        }}
+                        onClick={() => setIsSemesterModalVisible(true)}
                     >
-                        Éditer la période en cours
+                        Gérer les semestres
                     </AppButton>
                 </div>
                 
@@ -519,6 +541,24 @@ const AcademicPeriodsManager = () => {
                 
                 <div style={{ marginTop: '16px', fontSize: '14px', color: '#666' }}>
                     Période du {selectedPeriod?.name.toLowerCase() || 'contrôle continu #1'} du {selectedPeriod ? formatDate(selectedPeriod.startDate) : '1 oct'} - {selectedPeriod ? formatDate(selectedPeriod.endDate) : '28 Nov'}
+                </div>
+            </Modal>
+
+            {/* Modale de gestion des semestres */}
+            <Modal
+                title="Gestion des semestres"
+                open={isSemesterModalVisible}
+                onCancel={() => setIsSemesterModalVisible(false)}
+                footer={[
+                    <Button key="cancel" onClick={() => setIsSemesterModalVisible(false)}>
+                        Fermer
+                    </Button>
+                ]}
+                width={800}
+            >
+                <div style={{ padding: '20px 0' }}>
+                    <p>Interface CRUD pour les semestres à implémenter ici</p>
+                    {/* TODO: Ajouter le composant de gestion des semestres */}
                 </div>
             </Modal>
 

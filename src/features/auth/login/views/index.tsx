@@ -48,7 +48,7 @@ export const LoginForm = ()=>{
                     },
                 ]}
             >
-                <Input size={'large'} placeholder='Entrez votre nom'/>
+                <Input size={'large'} placeholder='Entrez votre Matricule'/>
             </Form.Item>
             <PasswordInputFormItem />
             <AppButton

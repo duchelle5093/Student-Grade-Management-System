@@ -10,8 +10,10 @@ import {
     periodLabelToColumnKey, 
     parsePeriodLabel, 
     isValidGradeValue,
-    findExistingGrade 
+    findExistingGrade,
+    getMaxGradeValue 
 } from "../../../utils/periodUtils";
+import { translatePeriodName } from "../../../utils/periodTranslation";
 import { fetchStudents } from "../../user/actions";
 import { fetchTeacherGrades, createGrade, updateGrade } from "../../grades";
 import { fetchAssignedSubjects } from "../../subjects";
@@ -31,7 +33,7 @@ export const Licence1 = () => {
 
     const { activePeriod, editableColumns } = useActivePeriodPolling({ enabled: true, interval: 10000 });
     const currentPeriodLabel = activePeriod?.shortName || "CC_1";
-    const formattedPeriod = formatPeriodLabel(currentPeriodLabel);
+    const formattedPeriod = translatePeriodName(activePeriod?.name) || formatPeriodLabel(currentPeriodLabel);
     const { filteredStudents, teacherSubjectsForLevel } = useFilteredStudents({
         currentLevel: AcademicLevel.LEVEL1,
     });
@@ -63,16 +65,16 @@ export const Licence1 = () => {
 
     /** FLOW CORRECT: TOUS les étudiants L1 + leurs notes pour la matière sélectionnée */
     const mergedRows = useMemo((): StudentGradeRow[] => {
+        if (!filteredStudents?.length) return [];
         // 1. Récupérer TOUS les étudiants de la classe L1
         return filteredStudents.map((student) => {
-            const studentId = student.id || student.studentId;
-            const studentName = student.studentName || 
-                [student.firstName, student.lastName].filter(Boolean).join(" ") ||
+            const studentId = student.id;
+            const studentName = [student.firstName, student.lastName].filter(Boolean).join(" ") ||
                 student.username ||
                 `Étudiant ${studentId}`;
 
             // 2. Chercher les notes existantes pour cet étudiant ET cette matière
-            const studentGrades = teacherGrades.filter((grade) => 
+            const studentGrades = (teacherGrades || []).filter((grade) => 
                 grade.studentId === studentId && 
                 grade.subjectId === selectedSubject?.id
             );
@@ -81,11 +83,21 @@ export const Licence1 = () => {
                 cc1: null, sn1: null, cc2: null, sn2: null,
             };
             
-            // 3. Si note existe → Afficher la note, sinon → null (sera affiché comme "-")
+            // 3. Utiliser le champ 'type' au lieu de 'periodLabel' pour déterminer la colonne
             studentGrades.forEach((grade) => {
-                const columnKey = periodLabelToColumnKey(grade.periodLabel);
-                if (columnKey && columnKey in gradeMap) {
-                    gradeMap[columnKey] = grade.value;
+                switch (grade.type) {
+                    case 'CC_1':
+                        gradeMap.cc1 = grade.value;
+                        break;
+                    case 'CC_2':
+                        gradeMap.cc2 = grade.value;
+                        break;
+                    case 'SN_1':
+                        gradeMap.sn1 = grade.value;
+                        break;
+                    case 'SN_2':
+                        gradeMap.sn2 = grade.value;
+                        break;
                 }
             });
 
@@ -102,14 +114,14 @@ export const Licence1 = () => {
 
     // Appliquer la recherche séparément
     const displayRows = useMemo(() => {
-        if (!searchValue.trim()) return mergedRows;
-        return mergedRows.filter((r) =>
-            r.studentName.toLowerCase().includes(searchValue.toLowerCase())
+        if (!searchValue?.trim()) return mergedRows || [];
+        return (mergedRows || []).filter((r) =>
+            r.studentName?.toLowerCase().includes(searchValue.toLowerCase())
         );
     }, [mergedRows, searchValue]);
 
     const handleEdit = () => {
-        setEditedData(displayRows);
+        setEditedData(displayRows || []);
         setIsTableEditable(true);
     };
 
@@ -137,17 +149,17 @@ export const Licence1 = () => {
             
             const payloads: Array<CreateGradeReqDto | { gradeId: number; gradeData: UpdateGradeReqDto }> = [];
 
-            for (const row of editedData) {
+            for (const row of (editedData || [])) {
                 const gradeValue = row[columnKey as keyof StudentGradeRow];
                 
                 if (!isValidGradeValue(gradeValue, currentPeriodLabel)) continue;
                 
                 const value = Number(gradeValue);
                 // Chercher la note existante pour cet étudiant, cette matière et cette période
-                const existing = teacherGrades.find(grade => 
+                const existing = (teacherGrades || []).find(grade => 
                     grade.studentId === row.studentId && 
                     grade.subjectId === selectedSubject.id &&
-                    grade.periodLabel === currentPeriodLabel
+                    (grade.type === currentPeriodLabel || grade.periodLabel === currentPeriodLabel)
                 );
 
                 if (existing) {
@@ -155,7 +167,8 @@ export const Licence1 = () => {
                         gradeId: existing.id,
                         gradeData: {
                             value,
-                            type: periodType as any,
+                            maxValue: getMaxGradeValue(currentPeriodLabel),
+                            type: currentPeriodLabel as any,
                             comments: `Note ${periodType} S${semester} mise à jour`,
                         }
                     });
@@ -165,8 +178,9 @@ export const Licence1 = () => {
                         subjectId: selectedSubject.id,
                         semesterId: activeSemester?.id || semester,
                         value,
-                        type: periodType as any,
-                        periodLabel: currentPeriodLabel,
+                        maxValue: getMaxGradeValue(currentPeriodLabel),
+                        type: currentPeriodLabel as any,
+                        periodType: currentPeriodLabel as any,
                         comments: `Note ${periodType} S${semester} ajoutée`,
                         enteredBy: user?.id || 1,
                     });
@@ -202,13 +216,11 @@ export const Licence1 = () => {
             await dispatch(fetchStudents()); // Refresh pour les stats
             setIsTableEditable(false);
 
-            if (failed === 0) {
-                notify({
-                    type: "success",
-                    message: "Succès",
-                    description: `${successful} note(s) traitée(s)`,
-                });
-            }
+            notify({
+                type: "success",
+                message: "Succès",
+                description: "Note(s) enregistrée(s) avec succès"
+            });
         } catch (error) {
             console.error(error);
             notify({
@@ -242,7 +254,7 @@ export const Licence1 = () => {
     }
 
     // Afficher un message si aucun étudiant dans la classe
-    if (filteredStudents.length === 0) {
+    if (!filteredStudents || filteredStudents.length === 0) {
         return (
             <div className="text-center py-8">
                 <h2 className="text-xl font-semibold text-gray-600 mb-4">
@@ -266,15 +278,15 @@ export const Licence1 = () => {
                 NC="10"
                 CANT="10"
                 studentCount={filteredStudents.length}
-                claimsCount={mockClaimsData.studentsWithClaims.reduce((total, student) => 
+                claimsCount={(mockClaimsData?.studentsWithClaims || []).reduce((total, student) => 
                     total + (student.grades?.flatMap(g => g.claims || []).filter(c => c.status === 'PENDING').length || 0), 0
                 )}
             />
 
             <div className="mt-8">
                 <TeacherGradesTable
-                    data={displayRows}
-                    studentsWithClaims={mockClaimsData.studentsWithClaims}
+                    data={displayRows || []}
+                    studentsWithClaims={mockClaimsData?.studentsWithClaims || []}
                     isEditable={isTableEditable}
                     onGradesChange={setEditedData}
                     onEdit={handleEdit}

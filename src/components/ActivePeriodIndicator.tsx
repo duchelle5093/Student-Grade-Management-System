@@ -43,7 +43,7 @@ export const ActivePeriodIndicator: React.FC<ActivePeriodIndicatorProps> = ({
                 className="flex items-center"
             >
                 <span className="font-medium">
-                    Période active : {formatPeriodName(activePeriod?.shortName)}
+                    Période : {activePeriod?.name || 'Non définie'}
                 </span>
             </Tag>
             

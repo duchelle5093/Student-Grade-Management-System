@@ -1,46 +1,50 @@
-import {StudentTopicResDto} from "./student.res.dto.ts";
-import {Role} from "../enums";
-
-interface Department {
+interface Subject {
     id: number;
     name: string;
-    subjects: any;
-}
-
-interface LevelInfo {
-    level: string; // "L1", "L2", "L3", "L4", "L5"
-    departments: Department[];
+    code: string;
+    credits: number;
+    description: string;
+    active: boolean;
+    level: string; // "LEVEL1", "LEVEL2", etc.
+    cycle: string; // "BACHELOR", "MASTER"
+    semesterId: number;
+    semesterName: string;
+    departmentId: number;
+    departmentName: string;
+    teacherId: number;
+    teacherName: string;
+    createdDate: string | null;
+    lastModifiedDate: string | null;
 }
 
 export interface userProfileResDto {
     id: number;
+    username: string;
     firstName: string;
     lastName: string;
     email: string;
-    username: string;
     role: string;
-    levels: LevelInfo[];
-    subjects: any;
+    subjects: Subject[];
 }
+//
+// interface Topic {
+//     code: string,
+//     title: string,
+//     cc: number,
+//     sn: number,
+//     semester: string,
+//     credits:number
+// }
 
-interface Topic {
-    code: string,
-    title: string,
-    cc: number,
-    sn: number,
-    semester: string,
-    credits:number
-}
-
-export interface studentResDto {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-    username: string;
-    role: string;
-    level: string;
-    topics: Topic[];
-    [index: string]: any
-}
+// export interface studentResDto {
+//     id: number;
+//     firstName: string;
+//     lastName: string;
+//     email: string;
+//     username: string;
+//     role: string;
+//     level: string;
+//     topics: Topic[];
+//     [index: string]: any
+// }
 

@@ -12,23 +12,18 @@ const countFailedSubjects = (studentData: StudentDataResDto): { failed: number; 
     const grouped = studentData.grades.reduce((acc, grade) => {
         const key = grade.subjectCode;
         if (!acc[key]) {
-            acc[key] = { cc: 0, sn: 0 };
+            acc[key] = { passed: false };
         }
-        if (grade.periodLabel === 'CC_1' || grade.periodLabel === 'CC_2') {
-            acc[key].cc = grade.value;
-        }
-        if (grade.periodLabel === 'SN_1' || grade.periodLabel === 'SN_2') {
-            acc[key].sn = grade.value;
-        }
+        // Utiliser la propriété passed du backend
+        acc[key].passed = grade.passed;
         return acc;
-    }, {} as Record<string, { cc: number; sn: number }>);
+    }, {} as Record<string, { passed: boolean }>);
 
     let failed = 0;
     let passed = 0;
 
     Object.values(grouped).forEach(subject => {
-        const total = subject.cc + subject.sn;
-        if (total >= 50) passed++;
+        if (subject.passed) passed++;
         else failed++;
     });
 
@@ -40,11 +35,11 @@ export default function StudentPage() {
     const student = useAppSelector((state) => state.user.profile);
     const studentGrades =  useAppSelector((state) => state.grades.studentGrades);
 
-    // Utiliser les mock data si pas de données réelles
-    const currentStudentData = student?.grades?.length > 0 
-        ? student 
-        : (Array.isArray(studentGrades) && studentGrades.length > 0)
-            ? studentGrades.find(grade => grade.studentId === student?.id)
+    // Utiliser les données réelles ou fallback sur mock data
+    const currentStudentData = (studentGrades && studentGrades.grades?.length > 0) 
+        ? studentGrades 
+        : (student?.grades?.length > 0)
+            ? student
             : mockStudentData;
 
     const { failed, passed } = useMemo(
@@ -53,9 +48,8 @@ export default function StudentPage() {
     );
 
     useEffect(()=>{
-        dispatch(fetchStudentGrades(student?.id))
-    } , [student?.id , dispatch])
-
+        dispatch(fetchStudentGrades(student?.id));
+    } , [student?.id , dispatch]);
 
 
     // if (!currentStudent) {
@@ -74,7 +68,7 @@ export default function StudentPage() {
 
             <div className={'w-full flex justify-between my-12'}>
                 <div>
-                    <p>Période en cours : <span>{currentStudentData?.semesterName || 'Non définie'}</span></p>
+                    <p>Semestre en cours : <span className="font-semibold text-blue-600">{currentStudentData?.semesterName ? `Semestre ${currentStudentData.semesterName}` : 'Non défini'}</span></p>
                     <p>Niveau : <span>{currentStudentData?.level || 'Étudiant'}</span></p>
                 </div>
                 <div>

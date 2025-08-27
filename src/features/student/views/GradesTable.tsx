@@ -34,7 +34,7 @@ export default function GradesTable({ student }: GradesTableProps) {
   const [claimedTopics, setClaimedTopics] = useState<Set<string>>(new Set());
   const {notify} = useNotification()
 
-  // Regrouper les notes par matière
+  // Regrouper les notes par matière avec colonnes séparées
   const groupedGrades = useMemo(() => {
     if (!student?.grades?.length) return [];
     
@@ -46,25 +46,33 @@ export default function GradesTable({ student }: GradesTableProps) {
           subjectName: grade.subjectName,
           semesterName: grade.semesterName,
           creditsEarned: grade.creditsEarned,
-          cc: null as number | null,
-          sn: null as number | null,
+          cc1: null as number | null,
+          cc2: null as number | null,
+          sn1: null as number | null,
+          sn2: null as number | null,
           total: 0,
           passed: false
         };
       }
       
-      // Gérer les periodLabel selon le semestre
-      if (grade.periodLabel === 'CC_1' || grade.periodLabel === 'CC_2') {
-        acc[key].cc = grade.value;
-      } else if (grade.periodLabel === 'SN_1' || grade.periodLabel === 'SN_2') {
-        acc[key].sn = grade.value;
+      // Assigner selon type
+      switch (grade.type) {
+        case 'CC_1':
+          acc[key].cc1 = grade.value;
+          break;
+        case 'CC_2':
+          acc[key].cc2 = grade.value;
+          break;
+        case 'SN_1':
+          acc[key].sn1 = grade.value;
+          break;
+        case 'SN_2':
+          acc[key].sn2 = grade.value;
+          break;
       }
       
-      // Calculer le total et le statut
-      const cc = acc[key].cc || 0;
-      const sn = acc[key].sn || 0;
-      acc[key].total = cc + sn;
-      acc[key].passed = acc[key].total >= 50;
+      // Utiliser la propriété passed du backend
+      acc[key].passed = grade.passed;
       
       return acc;
     }, {} as Record<string, any>);
@@ -182,33 +190,36 @@ export default function GradesTable({ student }: GradesTableProps) {
       key: "subjectName",
       sorter: (a: any, b: any) => (a.subjectName || '').localeCompare(b.subjectName || ''),
     },
+
     {
-      title: "Semestre",
-      dataIndex: "semesterName",
-      key: "semesterName",
-      sorter: (a: any, b: any) => (a.semesterName || '').localeCompare(b.semesterName || ''),
+      title: "CC_1",
+      dataIndex: "cc1",
+      key: "cc1",
+      render: (cc1: number | null) => cc1 !== null ? cc1.toFixed(1) : "-",
+      sorter: (a: any, b: any) => (a.cc1 || 0) - (b.cc1 || 0),
     },
     {
-      title: "CC/30",
-      dataIndex: "cc",
-      key: "cc",
-      render: (cc: number | null) => cc !== null ? cc : "-",
-      sorter: (a: any, b: any) => (a.cc || 0) - (b.cc || 0),
+      title: "CC_2",
+      dataIndex: "cc2",
+      key: "cc2",
+      render: (cc2: number | null) => cc2 !== null ? cc2.toFixed(1) : "-",
+      sorter: (a: any, b: any) => (a.cc2 || 0) - (b.cc2 || 0),
     },
     {
-      title: "SN/70",
-      dataIndex: "sn",
-      key: "sn",
-      render: (sn: number | null) => sn !== null ? sn : "-",
-      sorter: (a: any, b: any) => (a.sn || 0) - (b.sn || 0),
+      title: "SN_1",
+      dataIndex: "sn1",
+      key: "sn1",
+      render: (sn1: number | null) => sn1 !== null ? sn1.toFixed(1) : "-",
+      sorter: (a: any, b: any) => (a.sn1 || 0) - (b.sn1 || 0),
     },
     {
-      title: "Total",
-      dataIndex: "total",
-      key: "total",
-      render: (total: number) => total > 0 ? total : "-",
-      sorter: (a: any, b: any) => (a.total || 0) - (b.total || 0),
+      title: "SN_2",
+      dataIndex: "sn2",
+      key: "sn2",
+      render: (sn2: number | null) => sn2 !== null ? sn2.toFixed(1) : "-",
+      sorter: (a: any, b: any) => (a.sn2 || 0) - (b.sn2 || 0),
     },
+
     {
       title: "Crédit",
       dataIndex: "creditsEarned",
@@ -239,8 +250,8 @@ export default function GradesTable({ student }: GradesTableProps) {
         const topicData = {
           code: subjectCode,
           title: record.subjectName || 'Sans nom',
-          cc: record.cc,
-          sn: record.sn,
+          cc: record.cc1, // Utiliser cc1 pour compatibilité
+          sn: record.sn1, // Utiliser sn1 pour compatibilité
           semester: record.semesterName?.toLowerCase().includes('1') ? 'S1' : 'S2' as 'S1' | 'S2',
           credit: record.creditsEarned || 0
         };
@@ -269,6 +280,21 @@ export default function GradesTable({ student }: GradesTableProps) {
         scroll={{ x: true }}
         locale={{ emptyText: groupedGrades.length === 0 ? 'Aucune note disponible' : 'Aucune donnée' }}
       />
+      
+      {/* Ligne moyenne générale */}
+      {student?.gpa && (
+        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex justify-between items-center">
+            <span className="text-lg font-semibold text-blue-800">
+              Moyenne Générale (GPA)
+            </span>
+            <span className="text-xl font-bold text-blue-900">
+              {student.gpa.toFixed(2)}
+            </span>
+          </div>
+        </div>
+      )}
+      
       <Modal
         open={isModalVisible}
         onCancel={handleCancel}

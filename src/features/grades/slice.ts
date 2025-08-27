@@ -122,7 +122,8 @@ const gradesSlice = createSlice({
             })
             // Fetch active period
             .addCase(fetchActivePeriod.fulfilled, (state, action) => {
-                state.activePeriod = action.payload;
+                // L'API retourne un tableau, prendre le premier élément
+                state.activePeriod = Array.isArray(action.payload) ? action.payload[0] : action.payload;
             });
     },
 });

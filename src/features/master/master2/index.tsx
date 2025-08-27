@@ -10,8 +10,10 @@ import {
     periodLabelToColumnKey, 
     parsePeriodLabel, 
     isValidGradeValue,
-    findExistingGrade 
+    findExistingGrade,
+    getMaxGradeValue 
 } from "../../../utils/periodUtils";
+import { translatePeriodName } from "../../../utils/periodTranslation";
 import { fetchStudents } from "../../user/actions";
 import { fetchTeacherGrades, createGrade, updateGrade } from "../../grades";
 import { fetchAssignedSubjects } from "../../subjects";
@@ -31,7 +33,7 @@ export const Master2 = () => {
 
     const { activePeriod, editableColumns } = useActivePeriodPolling({ enabled: true, interval: 10000 });
     const currentPeriodLabel = activePeriod?.shortName || "CC_1";
-    const formattedPeriod = formatPeriodLabel(currentPeriodLabel);
+    const formattedPeriod = translatePeriodName(activePeriod?.name) || formatPeriodLabel(currentPeriodLabel);
     const { filteredStudents, teacherSubjectsForLevel } = useFilteredStudents({
         currentLevel: AcademicLevel.LEVEL5, // Master 2
     });
@@ -124,14 +126,21 @@ export const Master2 = () => {
                 if (!isValidGradeValue(gradeValue, currentPeriodLabel)) continue;
                 
                 const value = Number(gradeValue);
-                const existing = findExistingGrade(teacherGrades, row.studentId, currentPeriodLabel);
+                const existing = teacherGrades.find(grade => 
+                    grade.studentId === row.studentId && 
+                    grade.subjectId === selectedSubject.id &&
+                    (grade.type === currentPeriodLabel || grade.periodLabel === currentPeriodLabel)
+                );
 
                 if (existing) {
                     payloads.push({
-                        id: existing.id,
-                        value,
-                        type: periodType as any,
-                        comments: `Note ${periodType} S${semester} mise à jour`,
+                        gradeId: existing.id,
+                        gradeData: {
+                            value,
+                            maxValue: getMaxGradeValue(currentPeriodLabel),
+                            type: currentPeriodLabel as any,
+                            comments: `Note ${periodType} S${semester} mise à jour`,
+                        }
                     });
                 } else {
                     payloads.push({
@@ -139,8 +148,9 @@ export const Master2 = () => {
                         subjectId: selectedSubject.id,
                         semesterId: activeSemester?.id || semester,
                         value,
-                        type: periodType as any,
-                        periodLabel: currentPeriodLabel,
+                        maxValue: getMaxGradeValue(currentPeriodLabel),
+                        type: currentPeriodLabel as any,
+                        periodType: currentPeriodLabel as any,
                         comments: `Note ${periodType} S${semester} ajoutée`,
                         enteredBy: user?.id || 1,
                     });
@@ -153,12 +163,23 @@ export const Master2 = () => {
                 return;
             }
 
-            for (const payload of payloads) {
-                if ("id" in payload) {
-                    await dispatch(updateGrade(payload)).unwrap();
-                } else {
-                    await dispatch(createGrade(payload)).unwrap();
-                }
+            const results = await Promise.allSettled(
+                payloads.map(payload => 
+                    "gradeId" in payload 
+                        ? dispatch(updateGrade(payload)).unwrap()
+                        : dispatch(createGrade(payload)).unwrap()
+                )
+            );
+            
+            const successful = results.filter(r => r.status === 'fulfilled').length;
+            const failed = results.filter(r => r.status === 'rejected').length;
+            
+            if (failed > 0) {
+                notify({
+                    type: "warning",
+                    message: "Traitement partiel",
+                    description: `${successful} note(s) sauvegardée(s), ${failed} échec(s)`,
+                });
             }
 
             await dispatch(fetchTeacherGrades());
@@ -168,7 +189,7 @@ export const Master2 = () => {
             notify({
                 type: "success",
                 message: "Succès",
-                description: `${payloads.length} note(s) traitée(s)`,
+                description: "Note(s) enregistrée(s) avec succès"
             });
         } catch (error) {
             console.error(error);

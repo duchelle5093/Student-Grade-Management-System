@@ -7,37 +7,36 @@ interface UseFilteredStudentsProps {
 }
 
 export const useFilteredStudents = ({ currentLevel }: UseFilteredStudentsProps) => {
-    const { assignedSubjects } = useAppSelector(state => state.subjects);
+    const teacherProfile = useAppSelector(state => state.user.profile);
     const students = useAppSelector(state => state.user.students);
 
     const filteredStudents = useMemo(() => {
-        if (!students.length || !assignedSubjects.length) return [];
+        if (!students?.length || !teacherProfile?.subjects?.length) return [];
 
-        // Obtenir les codes des matières enseignées par l'enseignant pour ce niveau
-        const teacherSubjectCodes = assignedSubjects
-            .filter(subject => subject.level === currentLevel)
-            .map(subject => subject.code);
+        // Obtenir les matières enseignées par l'enseignant pour ce niveau
+        const teacherSubjectsForLevel = teacherProfile.subjects
+            .filter(subject => subject.level === currentLevel);
 
-        if (teacherSubjectCodes.length === 0) return [];
+        if (teacherSubjectsForLevel.length === 0) return [];
 
-        // Filtrer les étudiants du niveau approprié qui suivent au moins une matière de l'enseignant
-        const levelStudents = students.filter((student: StudentDataResDto) => {
-            // Vérifier si l'étudiant est du bon niveau
-            if (student.level !== currentLevel) return false;
+        const teacherSubjectIds = teacherSubjectsForLevel.map(subject => subject.id);
 
+        // Filtrer les étudiants qui suivent au moins une matière de l'enseignant pour ce niveau
+        const levelStudents = students.filter((student: any) => {
             // Vérifier si l'étudiant suit au moins une matière enseignée par cet enseignant
-            const studentSubjectCodes = student.topics?.map(topic => topic.code) || [];
-            return teacherSubjectCodes.some(teacherCode =>
-                studentSubjectCodes.includes(teacherCode)
+            return student.subjects?.some((subject: any) => 
+                subject.level === currentLevel && 
+                teacherSubjectIds.includes(subject.id)
             );
         });
 
         return levelStudents;
-    }, [students, assignedSubjects, currentLevel]);
+    }, [students, teacherProfile?.subjects, currentLevel]);
 
     const teacherSubjectsForLevel = useMemo(() => {
-        return assignedSubjects.filter(subject => subject.level === currentLevel);
-    }, [assignedSubjects, currentLevel]);
+        if (!teacherProfile?.subjects?.length) return [];
+        return teacherProfile.subjects.filter(subject => subject.level === currentLevel);
+    }, [teacherProfile?.subjects, currentLevel]);
 
     return {
         filteredStudents,

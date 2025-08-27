@@ -30,18 +30,11 @@ export const useStudentsByLevel = () => {
     const { uniqueLevels } = useTeacherLevels();
     
     return useMemo(() => {
-        // Mapper LEVEL1->L1, LEVEL2->L2 pour correspondre aux données étudiants
-        const levelMapping: Record<string, string> = {
-            'LEVEL1': 'L1',
-            'LEVEL2': 'L2', 
-            'LEVEL3': 'L3',
-            'LEVEL4': 'L4',
-            'LEVEL5': 'L5',
-        };
-        
         const byLevel = uniqueLevels.reduce((acc, level) => {
-            const studentLevel = levelMapping[level];
-            acc[level] = students.filter(s => s.level === studentLevel).length;
+            // Compter les étudiants qui ont au moins une matière de ce niveau
+            acc[level] = students.filter(student => 
+                student.subjects?.some(subject => subject.level === level)
+            ).length;
             return acc;
         }, {} as Record<string, number>);
         

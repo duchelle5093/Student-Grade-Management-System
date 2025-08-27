@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { StudentDataResDto } from '../../api/reponse-dto/student.res.dto';
 import { TeacherResDto, AdminStatsResDto, DepartmentResDto } from '../../api/reponse-dto/admin.res.dto';
+import { GradingWindowResponse } from '../../api/services/grading-windows.service';
 import { 
     fetchAllStudents, 
     fetchAllTeachers,
@@ -12,11 +13,18 @@ import {
     importStudents,
     importTeachers
 } from './actions';
+import {
+    fetchAllGradingWindows,
+    createGradingWindow,
+    updateGradingWindow,
+    deleteGradingWindow
+} from './grading-windows-actions';
 
 interface AdminState {
     students: StudentDataResDto[];
     teachers: TeacherResDto[];
     departments: DepartmentResDto[];
+    gradingWindows: GradingWindowResponse[];
     stats: AdminStatsResDto | null;
     loading: boolean;
     error: string | null;
@@ -28,6 +36,7 @@ const initialState: AdminState = {
     students: [],
     teachers: [],
     departments: [],
+    gradingWindows: [],
     stats: null,
     loading: false,
     error: null,
@@ -179,6 +188,65 @@ const adminSlice = createSlice({
             .addCase(importTeachers.rejected, (state, action) => {
                 state.importLoading = false;
                 state.error = action.error.message || 'Failed to import teachers';
+            })
+            
+            // Fetch grading windows
+            .addCase(fetchAllGradingWindows.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchAllGradingWindows.fulfilled, (state, action) => {
+                state.loading = false;
+                state.gradingWindows = action.payload;
+            })
+            .addCase(fetchAllGradingWindows.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message || 'Failed to fetch grading windows';
+            })
+            
+            // Create grading window
+            .addCase(createGradingWindow.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(createGradingWindow.fulfilled, (state, action) => {
+                state.loading = false;
+                state.gradingWindows.push(action.payload);
+            })
+            .addCase(createGradingWindow.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string || 'Failed to create grading window';
+            })
+            
+            // Update grading window
+            .addCase(updateGradingWindow.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(updateGradingWindow.fulfilled, (state, action) => {
+                state.loading = false;
+                const index = state.gradingWindows.findIndex(window => window.id === action.payload.id);
+                if (index !== -1) {
+                    state.gradingWindows[index] = action.payload;
+                }
+            })
+            .addCase(updateGradingWindow.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string || 'Failed to update grading window';
+            })
+            
+            // Delete grading window
+            .addCase(deleteGradingWindow.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(deleteGradingWindow.fulfilled, (state, action) => {
+                state.loading = false;
+                state.gradingWindows = state.gradingWindows.filter(window => window.id !== action.payload);
+            })
+            .addCase(deleteGradingWindow.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string || 'Failed to delete grading window';
             });
     },
 });

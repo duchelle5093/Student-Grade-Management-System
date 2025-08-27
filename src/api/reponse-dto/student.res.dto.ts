@@ -3,7 +3,7 @@ import {PeriodLabel} from "../enums";
 export interface StudentGradeResDto {
     id: number;
     createdDate: string;
-    lastModifiedDate: string | null;
+    lastModifiedDate: string;
     studentId: number;
     studentName: string;
     subjectId: number;
@@ -12,8 +12,8 @@ export interface StudentGradeResDto {
     semesterId: number;
     semesterName: string;
     value: number;
-    type: "CC" | "SN";
-    periodLabel: PeriodLabel
+    type: 'CC_1' | 'SN_1' | 'CC_2' | 'SN_2'; 
+    periodLabel: 'CC_1' | 'CC_2' | 'SN_1' | 'SN_2';
     comments: string;
     enteredBy: number;
     enteredByName: string;
@@ -26,25 +26,44 @@ export interface StudentTopicResDto {
     title: string;
     cc: number | null;
     sn: number | null;
-    semester: "S1" | "S2";
+    semester: 1 | 2;
     credit: number;
+}
+
+interface StudentSubject {
+    id: number | null;
+    name: string;
+    code: string;
+    credits: number;
+    description: string | null;
+    active: boolean | null;
+    level: string | null;
+    cycle: string | null;
+    semesterId: number;
+    semesterName: string;
+    departmentId: number | null;
+    departmentName: string | null;
+    teacherId: number | null;
+    teacherName: string | null;
+    createdDate: string | null;
+    lastModifiedDate: string | null;
 }
 
 export interface StudentDataResDto {
     studentId: number;
     studentName: string;
-    semesterId: number;
-    semesterName: string;
+    semesterId: number | null;
+    semesterName: string | null;
     grades: StudentGradeResDto[];
     gpa: number;
     status: string | null;
     firstName: string;
     lastName: string;
     email: string;
-    username: string | null;
-    role: string;
+    username: string;
     level: string;
-    topics: StudentTopicResDto[];
+    role: string;
+    subjects: StudentSubject[];
 }
 
 
@@ -118,7 +137,7 @@ export interface StudentListResDto {
     lastName: string;
     email: string;
     role: string;
-    level?: string;
+    subjects: StudentSubject[];
 }
 
 // Interface pour la création/mise à jour d'étudiant

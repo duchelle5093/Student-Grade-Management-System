@@ -10,8 +10,10 @@ import {
     periodLabelToColumnKey,
     parsePeriodLabel,
     isValidGradeValue,
-    findExistingGrade
+    findExistingGrade,
+    getMaxGradeValue
 } from "../../../utils/periodUtils";
+import { translatePeriodName } from "../../../utils/periodTranslation";
 import { fetchStudents } from "../../user/actions";
 import { fetchTeacherGrades, createGrade, updateGrade } from "../../grades";
 import { fetchAssignedSubjects } from "../../subjects";
@@ -31,7 +33,7 @@ export const Licence2 = () => {
 
     const { activePeriod, editableColumns } = useActivePeriodPolling({ enabled: true, interval: 10000 });
     const currentPeriodLabel = activePeriod?.shortName || "CC_1";
-    const formattedPeriod = formatPeriodLabel(currentPeriodLabel);
+    const formattedPeriod = translatePeriodName(activePeriod?.name) || formatPeriodLabel(currentPeriodLabel);
     const { filteredStudents, teacherSubjectsForLevel } = useFilteredStudents({
         currentLevel: AcademicLevel.LEVEL2,
     });
@@ -137,7 +139,7 @@ export const Licence2 = () => {
                 const existing = teacherGrades.find(grade => 
                     grade.studentId === row.studentId && 
                     grade.subjectId === selectedSubject.id &&
-                    grade.periodLabel === currentPeriodLabel
+                    (grade.type === currentPeriodLabel || grade.periodLabel === currentPeriodLabel)
                 );
 
                 if (existing) {
@@ -145,7 +147,8 @@ export const Licence2 = () => {
                         gradeId: existing.id,
                         gradeData: {
                             value,
-                            type: periodType as any,
+                            maxValue: getMaxGradeValue(currentPeriodLabel),
+                            type: currentPeriodLabel as any,
                             comments: `Note ${periodType} S${semester} mise à jour`,
                         }
                     });
@@ -155,8 +158,9 @@ export const Licence2 = () => {
                         subjectId: selectedSubject.id,
                         semesterId: activeSemester?.id || semester,
                         value,
-                        type: periodType as any,
-                        periodLabel: currentPeriodLabel,
+                        maxValue: getMaxGradeValue(currentPeriodLabel),
+                        type: currentPeriodLabel as any,
+                        periodType: currentPeriodLabel as any,
                         comments: `Note ${periodType} S${semester} ajoutée`,
                         enteredBy: user?.id || 1,
                     });
@@ -195,7 +199,7 @@ export const Licence2 = () => {
             notify({
                 type: "success",
                 message: "Succès",
-                description: `${payloads.length} note(s) traitée(s)`,
+                description: "Note(s) enregistrée(s) avec succès"
             });
         } catch (error) {
             console.error(error);

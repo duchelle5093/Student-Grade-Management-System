@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { Table, Input, Button, Tag, Modal, Badge } from "antd";
-import { MagnifyingGlassCircleIcon, ExclamationTriangleIcon } from "@heroicons/react/24/solid";
+import { MagnifyingGlassCircleIcon } from "@heroicons/react/24/solid";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { GradesEdition } from "./GradesEditionBtn";
 import { EditPvButton } from "./EditPvButton";
 import { ReclamationsDetails } from "../features/reclamations";
-import { TeacherGradeResDto } from "../api/reponse-dto/grade.res.dto";
+
 import { StudentWithClaims, ClaimData } from "../features/teacher/mockClaimsData";
 import { useAppDispatch } from "../store";
 import { gradeService } from "../api/configs";
@@ -54,8 +54,8 @@ export const TeacherGradesTable = ({
     const [rejectReason, setRejectReason] = useState("");
     const { notify } = useNotification();
     
-    // Polling de la période active
-    const { activePeriod, editableColumns: pollingEditableColumns } = useActivePeriodPolling({
+    // Polling des colonnes éditables basé sur la période active
+    const { editableColumns: pollingEditableColumns } = useActivePeriodPolling({
         enabled: true,
         interval: 30000 // 30 secondes
     });
@@ -64,12 +64,7 @@ export const TeacherGradesTable = ({
         setEditingData(data);
     }, [data]);
 
-    const periodMap: Record<string, "CC_1" | "SN_1" | "CC_2" | "SN_2"> = {
-        cc1: "CC_1",
-        sn1: "SN_1", 
-        cc2: "CC_2",
-        sn2: "SN_2",
-    };
+
 
     // Vérifier si un étudiant a une revendication pour une période donnée
     const getClaimForStudent = (studentId: number, period: "cc1" | "sn1" | "cc2" | "sn2"): ClaimData | null => {
@@ -184,14 +179,14 @@ export const TeacherGradesTable = ({
                 return gradeA - gradeB;
             },
             render: (_: any, record: StudentGradeRow) => {
+                if (!record || !record.studentId) return "-";
+                
                 const grade = getStudentGrade(record.studentId, field as any);
                 const claim = getClaimForStudent(record.studentId, field as any);
                 const hasClaim = claim !== null;
 
                 // Seul le polling détermine les colonnes éditables
-                const currentEditableColumns = pollingEditableColumns.length > 0 
-                    ? pollingEditableColumns 
-                    : []; // Aucune colonne éditable si pas de période active
+                const currentEditableColumns = Array.isArray(pollingEditableColumns) ? pollingEditableColumns : [];
                 
                 if (isEditable && currentEditableColumns.includes(field)) {
                     const periodMap: Record<string, string> = {
@@ -201,6 +196,7 @@ export const TeacherGradesTable = ({
                     
                     return (
                         <Input
+                            key={`${record.studentId}-${field}`}
                             type="number"
                             min={0}
                             max={maxValue}
@@ -217,6 +213,7 @@ export const TeacherGradesTable = ({
                 if (hasClaim) {
                     return (
                         <div
+                            key={`${record.studentId}-${field}-claim`}
                             className="cursor-pointer bg-orange-100 border-2 border-orange-400 rounded px-2 py-1 hover:bg-orange-200 transition-colors"
                             onClick={() => handleClaimClick(record.studentId, field as any)}
                         >
@@ -228,28 +225,30 @@ export const TeacherGradesTable = ({
                     );
                 }
 
-                return grade?.toString() || "-";
+                return <span key={`${record.studentId}-${field}-grade`}>{grade?.toString() || "-"}</span>;
             },
         })),
         {
             title: "Total",
             key: "total",
             render: (_: any, record: StudentGradeRow) => {
-                const total = useMemo(() => {
-                    const grades = ["cc1", "sn1", "cc2", "sn2"].map(field => 
-                        getStudentGrade(record.studentId, field as any) || 0
-                    );
-                    return grades.reduce((sum, grade) => sum + grade, 0);
-                }, [record.studentId, editingData]);
-                return total > 0 ? total.toFixed(2) : "-";
+                if (!record || !record.studentId) return "-";
+                
+                const grades = ["cc1", "sn1", "cc2", "sn2"].map(field => 
+                    getStudentGrade(record.studentId, field as any) || 0
+                );
+                const total = grades.reduce((sum, grade) => sum + grade, 0);
+                return <span key={`${record.studentId}-total`}>{total > 0 ? total.toFixed(2) : "-"}</span>;
             },
         },
     ];
 
     const studentsWithGrades = new Set<number>();
-    editingData.forEach((g) => {
-        if (g.value !== null && g.value !== undefined) {
-            studentsWithGrades.add(g.studentId);
+    editingData.forEach((student) => {
+        const hasAnyGrade = [student.cc1, student.sn1, student.cc2, student.sn2]
+            .some(grade => grade !== null && grade !== undefined);
+        if (hasAnyGrade) {
+            studentsWithGrades.add(student.studentId);
         }
     });
 

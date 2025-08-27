@@ -1,6 +1,6 @@
 import { AxiosInstance } from 'axios';
 import { userProfileResDto } from '../reponse-dto/user.res.dto';
-import {StudentDataResDto} from "../reponse-dto/student.res.dto.ts";
+import {StudentListResDto} from "../reponse-dto/student.res.dto.ts";
 
 export const userApis = {
   GET_PROFILE: 'me',
@@ -23,7 +23,7 @@ export class UserService {
   }
 
   async getStudents() {
-    const res = await this._client.get<StudentDataResDto[]>(
+    const res = await this._client.get<StudentListResDto[]>(
       userApis.GET_STUDENTS
     );
     return res.data;
