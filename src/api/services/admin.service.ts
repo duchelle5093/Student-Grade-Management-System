@@ -225,5 +225,25 @@ export class AdminService {
         return response.data;
     }
 
+    // Changement de département utilisateur
+    async switchUserDepartment(deptId: number): Promise<any> {
+        const response = await this._client.post(`departments/switch/${deptId}`);
+        return response.data;
+    }
 
+    // Fenêtres de notation
+    async getAllGradingWindows(): Promise<any[]> {
+        const response = await this._client.get('grading-windows');
+        return response.data;
+    }
+
+    async createGradingWindow(windowData: any): Promise<any> {
+        const response = await this._client.post('grading-windows', windowData);
+        return response.data;
+    }
+
+    async updateGradingWindow(windowData: any): Promise<any> {
+        const response = await this._client.put(`grading-windows/${windowData.id}`, windowData);
+        return response.data;
+    }
 }

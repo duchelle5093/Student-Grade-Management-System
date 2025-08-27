@@ -3,6 +3,9 @@ import {SemesterResDto} from "../reponse-dto/semester.res.dto";
 
 const semesterApis = {
     GET_SEMESTERS: 'semesters',
+    CREATE_SEMESTER: 'semesters',
+    UPDATE_SEMESTERS: 'semesters',
+    DELETE_SEMESTER: 'semesters',
 };
 
 export class SemesterService {
@@ -21,5 +24,37 @@ export class SemesterService {
     async getActiveSemester(): Promise<SemesterResDto | null> {
         const semesters = await this.getSemesters();
         return semesters.find(semester => semester.active) || null;
+    }
+
+    async createSemester(semester: {
+        name: string;
+        startDate: string;
+        endDate: string;
+        active: boolean;
+    }): Promise<SemesterResDto> {
+        const response = await this._client.post<SemesterResDto>(
+            semesterApis.CREATE_SEMESTER,
+            semester
+        );
+        return response.data;
+    }
+
+    async updateSemesters(semesters: {
+        id: number;
+        name: string;
+        startDate: string;
+        endDate: string;
+        active: boolean;
+        orderIndex: number;
+    }[]): Promise<SemesterResDto[]> {
+        const response = await this._client.put<SemesterResDto[]>(
+            semesterApis.UPDATE_SEMESTERS,
+            semesters
+        );
+        return response.data;
+    }
+
+    async deleteSemester(id: number): Promise<void> {
+        await this._client.delete(`${semesterApis.DELETE_SEMESTER}/${id}`);
     }
 }

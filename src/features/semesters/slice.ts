@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { SemesterResDto } from '../../api/reponse-dto/semester.res.dto';
-import { fetchSemesters, fetchActiveSemester } from './actions';
+import { fetchSemesters, fetchActiveSemester, createSemester, updateSemesters, deleteSemester } from './actions';
 
 interface SemestersState {
     semesters: SemesterResDto[];
@@ -49,6 +49,42 @@ const semestersSlice = createSlice({
             .addCase(fetchActiveSemester.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.error.message || 'Failed to fetch active semester';
+            })
+            .addCase(createSemester.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(createSemester.fulfilled, (state, action) => {
+                state.loading = false;
+                state.semesters.push(action.payload);
+            })
+            .addCase(createSemester.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message || 'Failed to create semester';
+            })
+            .addCase(updateSemesters.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(updateSemesters.fulfilled, (state, action) => {
+                state.loading = false;
+                state.semesters = action.payload;
+            })
+            .addCase(updateSemesters.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message || 'Failed to update semesters';
+            })
+            .addCase(deleteSemester.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(deleteSemester.fulfilled, (state, action) => {
+                state.loading = false;
+                state.semesters = state.semesters.filter(s => s.id !== action.payload);
+            })
+            .addCase(deleteSemester.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message || 'Failed to delete semester';
             });
     },
 });

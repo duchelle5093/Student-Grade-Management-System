@@ -13,12 +13,20 @@ import {
     importStudents,
     importTeachers
 } from './actions';
+import { fetchAllSubjects } from '../subjects/actions';
 import {
     fetchAllGradingWindows,
     createGradingWindow,
     updateGradingWindow,
     deleteGradingWindow
 } from './grading-windows-actions';
+import {
+    createDepartment,
+    updateDepartment,
+    deleteDepartment,
+    getDepartmentDetails,
+    switchUserDepartment
+} from './departments-actions';
 
 interface AdminState {
     students: StudentDataResDto[];
@@ -247,6 +255,77 @@ const adminSlice = createSlice({
             .addCase(deleteGradingWindow.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string || 'Failed to delete grading window';
+            })
+            
+            // Create department
+            .addCase(createDepartment.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(createDepartment.fulfilled, (state, action) => {
+                state.loading = false;
+                state.departments.push(action.payload);
+            })
+            .addCase(createDepartment.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string || 'Failed to create department';
+            })
+            
+            // Update department
+            .addCase(updateDepartment.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(updateDepartment.fulfilled, (state, action) => {
+                state.loading = false;
+                const index = state.departments.findIndex(dept => dept.id === action.payload.id);
+                if (index !== -1) {
+                    state.departments[index] = action.payload;
+                }
+            })
+            .addCase(updateDepartment.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string || 'Failed to update department';
+            })
+            
+            // Delete department
+            .addCase(deleteDepartment.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(deleteDepartment.fulfilled, (state, action) => {
+                state.loading = false;
+                state.departments = state.departments.filter(dept => dept.id !== action.payload);
+            })
+            .addCase(deleteDepartment.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string || 'Failed to delete department';
+            })
+            
+            // Get department details
+            .addCase(getDepartmentDetails.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(getDepartmentDetails.fulfilled, (state) => {
+                state.loading = false;
+            })
+            .addCase(getDepartmentDetails.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string || 'Failed to get department details';
+            })
+            
+            // Switch user department
+            .addCase(switchUserDepartment.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(switchUserDepartment.fulfilled, (state) => {
+                state.loading = false;
+            })
+            .addCase(switchUserDepartment.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string || 'Failed to switch department';
             });
     },
 });

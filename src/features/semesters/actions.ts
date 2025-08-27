@@ -25,3 +25,51 @@ export const fetchActiveSemester = createAsyncThunk<SemesterResDto | null>(
         }
     }
 );
+
+export const createSemester = createAsyncThunk<SemesterResDto, {
+    name: string;
+    startDate: string;
+    endDate: string;
+    active: boolean;
+}>(
+    'semesters/createSemester',
+    async (semesterData, { rejectWithValue }) => {
+        try {
+            const response = await semesterService.createSemester(semesterData);
+            return response;
+        } catch (error) {
+            return rejectWithValue('Failed to create semester') || error;
+        }
+    }
+);
+
+export const updateSemesters = createAsyncThunk<SemesterResDto[], {
+    id: number;
+    name: string;
+    startDate: string;
+    endDate: string;
+    active: boolean;
+    orderIndex: number;
+}[]>(
+    'semesters/updateSemesters',
+    async (semestersData, { rejectWithValue }) => {
+        try {
+            const response = await semesterService.updateSemesters(semestersData);
+            return response;
+        } catch (error) {
+            return rejectWithValue('Failed to update semesters') || error;
+        }
+    }
+);
+
+export const deleteSemester = createAsyncThunk<number, number>(
+    'semesters/deleteSemester',
+    async (id, { rejectWithValue }) => {
+        try {
+            await semesterService.deleteSemester(id);
+            return id;
+        } catch (error) {
+            return rejectWithValue('Failed to delete semester') || error;
+        }
+    }
+);

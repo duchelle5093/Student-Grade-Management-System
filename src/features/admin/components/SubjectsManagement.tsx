@@ -29,6 +29,7 @@ import { fetchAllSubjects } from '../../subjects';
 import { useNotification } from '../../../contexts';
 import { SubjectResDto } from '../../../api/reponse-dto/subjects.res.dto';
 import { SubjectModal } from './SubjectModal';
+import { DepartmentManagementModal } from './DepartmentManagementModal';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -46,6 +47,8 @@ export const SubjectsManagement = () => {
     const [filteredSubjects, setFilteredSubjects] = useState<SubjectResDto[]>([]);
     const [isSubjectModalVisible, setIsSubjectModalVisible] = useState(false);
     const [editingSubject, setEditingSubject] = useState<SubjectResDto | null>(null);
+    const [isDepartmentModalVisible, setIsDepartmentModalVisible] = useState(false);
+    const [editingDepartment, setEditingDepartment] = useState<any | null>(null);
 
     useEffect(() => {
         dispatch(fetchAllSubjects());
@@ -166,30 +169,12 @@ export const SubjectsManagement = () => {
             title: 'Enseignant',
             key: 'teacher',
             render: (record: SubjectResDto) => {
-                const compatibleTeachers = getCompatibleTeachers(record);
                 const currentTeacher = teachers.find(t => t.id === record.teacherId);
                 
-                return (
-                    <div>
-                        {currentTeacher && (
-                            <div style={{ marginBottom: 8, fontSize: '12px', color: '#666' }}>
-                                Actuel: <strong>{currentTeacher.firstName} {currentTeacher.lastName}</strong>
-                            </div>
-                        )}
-                        <Select
-                            style={{ width: 200 }}
-                            placeholder={currentTeacher ? "Changer d'enseignant" : "Assigner un enseignant"}
-                            value={record.teacherId}
-                            onChange={(teacherId) => handleAssignTeacher(record.id, teacherId)}
-                            allowClear
-                        >
-                            {compatibleTeachers.map(teacher => (
-                                <Option key={teacher.id} value={teacher.id}>
-                                    {teacher.firstName} {teacher.lastName}
-                                </Option>
-                            ))}
-                        </Select>
-                    </div>
+                return currentTeacher ? (
+                    <Text>{currentTeacher.firstName} {currentTeacher.lastName}</Text>
+                ) : (
+                    <Text type="secondary">Non assigné</Text>
                 );
             },
         },
@@ -255,6 +240,19 @@ export const SubjectsManagement = () => {
                             scrollbarColor: '#bfbfbf #ffffff'
                         }}
                     >
+                        <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={() => setIsDepartmentModalVisible(true)}
+                            style={{ 
+                                width: '100%', 
+                                marginBottom: '16px',
+                                backgroundColor: '#6EADFF', 
+                                borderColor: '#6EADFF' 
+                            }}
+                        >
+                            Gestion des départements
+                        </Button>
                         <Space direction="vertical" style={{ width: '100%' }}>
                             {departments.map(dept => 
                                 <Button
@@ -367,6 +365,15 @@ export const SubjectsManagement = () => {
                     dispatch(fetchAllSubjects());
                 }}
                 editingSubject={editingSubject}
+            />
+
+            {/* Modal de gestion des départements */}
+            <DepartmentManagementModal
+                visible={isDepartmentModalVisible}
+                onCancel={() => {
+                    setIsDepartmentModalVisible(false);
+                    setEditingDepartment(null);
+                }}
             />
         </div>
     );

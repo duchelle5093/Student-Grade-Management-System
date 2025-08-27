@@ -26,7 +26,7 @@ import {
     KeyOutlined
 } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../../store';
-import { createUser, updateUser } from '../actions';
+import { createUser, updateUser, fetchAllDepartments } from '../actions';
 import { Role, AcademicLevel, ColorTheme } from '../../../api/enums';
 import dayjs from 'dayjs';
 import { useNotification } from '../../../contexts/notification/context';
@@ -48,7 +48,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
     editingUser
 }) => {
     const dispatch = useAppDispatch();
-    const { loading } = useAppSelector(state => state.admin);
+    const { loading, departments = [] } = useAppSelector(state => state.admin);
     const { notify } = useNotification();
     
     const [form] = Form.useForm();
@@ -56,6 +56,13 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
     const [selectedRole, setSelectedRole] = useState<Role>(editingUser?.role || Role.STUDENT);
     const [formData, setFormData] = useState<any>({});
     
+    // Charger les départements
+    useEffect(() => {
+        if (visible) {
+            dispatch(fetchAllDepartments());
+        }
+    }, [visible, dispatch]);
+
     // Pré-remplir le formulaire en mode édition
     useEffect(() => {
         if (editingUser && visible) {
@@ -111,8 +118,6 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
             
             // Combiner toutes les données des étapes
             const allData = { ...formData, ...currentStepValues };
-            console.log('All form data:', allData); // Debug
-            console.log('Selected role:', selectedRole); // Debug
             
             // Construire userData selon le rôle
             let userData: any = {
@@ -353,10 +358,16 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
                                             label="Spécialité"
                                             rules={[{ required: true, message: 'La spécialité est requise' }]}
                                         >
-                                            <Input 
+                                            <Select 
                                                 size="large" 
-                                                placeholder="Ex: Computer Science"
-                                            />
+                                                placeholder="Sélectionnez une spécialité"
+                                            >
+                                                {departments.map(dept => (
+                                                    <Select.Option key={dept.id} value={dept.name}>
+                                                        {dept.name}
+                                                    </Select.Option>
+                                                ))}
+                                            </Select>
                                         </Form.Item>
                                     </Col>
                                     <Col span={8}>
@@ -368,7 +379,6 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
                                             <Select size="large" placeholder="Sélectionnez le cycle">
                                                 <Select.Option value="BACHELOR">Licence</Select.Option>
                                                 <Select.Option value="MASTER">Master</Select.Option>
-                                                <Select.Option value="PHD">Doctorat</Select.Option>
                                             </Select>
                                         </Form.Item>
                                     </Col>
@@ -404,10 +414,16 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
                                             label="Département"
                                             rules={[{ required: true, message: 'Le département est requis' }]}
                                         >
-                                            <Input 
+                                            <Select 
                                                 size="large" 
-                                                placeholder="Ex: Computer Science"
-                                            />
+                                                placeholder="Sélectionnez un département"
+                                            >
+                                                {departments.map(dept => (
+                                                    <Select.Option key={dept.id} value={dept.name}>
+                                                        {dept.name}
+                                                    </Select.Option>
+                                                ))}
+                                            </Select>
                                         </Form.Item>
                                     </Col>
                                 </Row>
@@ -418,7 +434,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
                                 >
                                     <Input 
                                         size="large" 
-                                        placeholder="+1234567890"
+                                        placeholder="+237655555555"
                                     />
                                 </Form.Item>
                             </>

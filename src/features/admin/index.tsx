@@ -8,6 +8,7 @@ import { AppButton } from "../../components";
 import { useAppDispatch, useAppSelector } from '../../store';
 import { fetchAllGradingWindows, updateGradingWindow } from './grading-windows-actions';
 import { useNotification } from '../../contexts';
+import { SemesterManagement } from './components/SemesterManagement';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -554,12 +555,9 @@ const AcademicPeriodsManager = () => {
                         Fermer
                     </Button>
                 ]}
-                width={800}
+                width={1000}
             >
-                <div style={{ padding: '20px 0' }}>
-                    <p>Interface CRUD pour les semestres à implémenter ici</p>
-                    {/* TODO: Ajouter le composant de gestion des semestres */}
-                </div>
+                <SemesterManagement />
             </Modal>
 
             <style>{`
