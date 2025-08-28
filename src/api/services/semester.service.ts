@@ -4,6 +4,7 @@ import {SemesterResDto} from "../reponse-dto/semester.res.dto";
 const semesterApis = {
     GET_SEMESTERS: 'semesters',
     CREATE_SEMESTER: 'semesters',
+    UPDATE_SEMESTER: 'semesters',
     UPDATE_SEMESTERS: 'semesters',
     DELETE_SEMESTER: 'semesters',
 };
@@ -31,9 +32,25 @@ export class SemesterService {
         startDate: string;
         endDate: string;
         active: boolean;
+        orderIndex: number;
     }): Promise<SemesterResDto> {
         const response = await this._client.post<SemesterResDto>(
             semesterApis.CREATE_SEMESTER,
+            semester
+        );
+        return response.data;
+    }
+
+    async updateSemester(semester: {
+        id: number;
+        name: string;
+        startDate: string;
+        endDate: string;
+        active: boolean;
+        orderIndex: number;
+    }): Promise<SemesterResDto> {
+        const response = await this._client.put<SemesterResDto>(
+            `${semesterApis.UPDATE_SEMESTERS}/${semester.id}`,
             semester
         );
         return response.data;

@@ -7,7 +7,8 @@ import {
     InputNumber,
     Switch,
     Row,
-    Col
+    Col,
+    Button
 } from 'antd';
 import { useAppDispatch, useAppSelector } from '../../../store';
 import { createSubject, updateSubject } from '../subjects-actions';
@@ -108,9 +109,13 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
     };
 
     const getCompatibleTeachers = (departmentName: string, level: string) => {
-        return teachers.filter(teacher => 
-            teacher.department === departmentName
-        );
+        if (!departmentName) return teachers;
+        
+        return teachers.filter(teacher => {
+            if (!teacher.subjects || teacher.subjects.length === 0) return false;
+            const teacherDepartment = teacher.subjects[0].departmentName;
+            return teacherDepartment === departmentName;
+        });
     };
 
     const selectedDepartment = Form.useWatch('departmentName', form);
@@ -144,42 +149,32 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
                 }
             }}
             footer={[
-                <div key="footer" style={{ display: 'flex', justifyContent: 'space-between', gap: '10%' }}>
-                    <button
-                        key="cancel"
+                <div key="footer" style={{ display: 'flex', gap: '12px', width: '100%' }}>
+                    <Button 
+                        key="cancel" 
                         onClick={handleCancel}
-                        style={{
-                            width: '45%',
-                            height: '40px',
-                            border: '1px solid #ff4d4f',
+                        style={{ 
+                            flex: 1, 
+                            borderColor: '#ff4d4f', 
                             color: '#ff4d4f',
-                            fontWeight: 'bold',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontSize: '14px'
+                            backgroundColor: '#fff'
                         }}
                     >
                         Annuler
-                    </button>
-                    <button
-                        key="submit"
+                    </Button>
+                    <Button 
+                        key="confirm" 
+                        type="primary" 
                         onClick={handleSubmit}
-                        disabled={loading}
-                        style={{
-                            width: '45%',
-                            height: '40px',
-                            backgroundColor: '#6EADFF',
-                            border: '1px solid #6EADFF',
-                            color: 'white',
-                            fontWeight: 'bold',
-                            borderRadius: '6px',
-                            cursor: loading ? 'not-allowed' : 'pointer',
-                            fontSize: '14px',
-                            opacity: loading ? 0.6 : 1
+                        loading={loading}
+                        style={{ 
+                            flex: 1, 
+                            backgroundColor: '#6EADFF', 
+                            borderColor: '#6EADFF' 
                         }}
                     >
-                        {loading ? 'Chargement...' : (editingSubject ? 'Modifier' : 'Créer')}
-                    </button>
+                        {editingSubject ? 'Modifier' : 'Créer'}
+                    </Button>
                 </div>
             ]}
         >
@@ -198,7 +193,22 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
                         <Form.Item
                             name="code"
                             label="Code"
-                            rules={[{ required: true, message: 'Le code est requis' }]}
+                            rules={[
+                                { required: true, message: 'Le code est requis' },
+                                {
+                                    validator: async (_, value) => {
+                                        if (!value) return;
+                                        const { allSubjects } = useAppSelector.getState().subjects;
+                                        const existingSubject = allSubjects.find(s => 
+                                            s.code.toLowerCase() === value.toLowerCase() && 
+                                            (!editingSubject || s.id !== editingSubject.id)
+                                        );
+                                        if (existingSubject) {
+                                            throw new Error('Ce code existe déjà');
+                                        }
+                                    }
+                                }
+                            ]}
                         >
                             <Input size="large" placeholder="Ex: PROG101" />
                         </Form.Item>
@@ -286,7 +296,7 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
                                 size="large" 
                                 placeholder="Assigner un enseignant"
                                 allowClear
-                                disabled={!selectedDepartment || !selectedLevel}
+                                disabled={!selectedDepartment}
                             >
                                 {getCompatibleTeachers(selectedDepartment, selectedLevel).map(teacher => (
                                     <Option key={teacher.id} value={teacher.id}>

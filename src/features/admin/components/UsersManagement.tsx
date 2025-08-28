@@ -15,7 +15,6 @@ import {
     Tabs,
     Modal,
     Checkbox,
-    message,
     Select,
 } from 'antd';
 import { 
@@ -50,22 +49,10 @@ export const UsersManagement = () => {
     const { students = [], teachers = [], stats = null, loading = false } = useAppSelector(state => state.admin || {});
     const { notify } = useNotification();
     
-    // Générer les statistiques à partir des données réelles
-    const generateStats = () => {
-        const totalStudents = students.length;
-        const activeStudents = students.filter(student => student.role === 'STUDENT').length;
-        const totalTeachers = teachers.length;
-        
-        return {
-            totalStudents,
-            totalTeachers,
-            activeStudents,
-            studentsPerLevel: [],
-            subjectsPerDepartment: []
-        };
-    };
-    
-    const computedStats = generateStats();
+    // Stats simples calculées directement
+    const totalStudents = students.length;
+    const totalTeachers = teachers.length;
+    const activeStudents = students.filter(student => student.role === 'STUDENT').length;
     
     const [searchText, setSearchText] = useState('');
     const [activeTab, setActiveTab] = useState('students');
@@ -76,6 +63,9 @@ export const UsersManagement = () => {
     const [selectAll, setSelectAll] = useState(false);
     const [generatingTranscripts, setGeneratingTranscripts] = useState(false);
     const [selectedPeriod, setSelectedPeriod] = useState('CC_1');
+    const [filterRole, setFilterRole] = useState<string>('all');
+    const [filterLevel, setFilterLevel] = useState<string>('all');
+    const [filterDepartment, setFilterDepartment] = useState<string>('all');
     
     const handleEditUser = (user: any) => {
         console.log('User to edit:', user); // Debug
@@ -129,11 +119,27 @@ Cette action est irréversible.`,
         dispatch(fetchAllTeachers());
     }, [dispatch]);
 
-    const filteredStudents = students.filter(student =>
-        `${student.firstName || ''} ${student.lastName || ''}`.toLowerCase().includes(searchText.toLowerCase()) ||
-        (student.email || '').toLowerCase().includes(searchText.toLowerCase()) ||
-        (student.username || '').toLowerCase().includes(searchText.toLowerCase())
-    );
+    const filteredStudents = students.filter(student => {
+        const matchesSearch = `${student.firstName || ''} ${student.lastName || ''}`.toLowerCase().includes(searchText.toLowerCase()) ||
+            (student.email || '').toLowerCase().includes(searchText.toLowerCase()) ||
+            (student.username || '').toLowerCase().includes(searchText.toLowerCase());
+        
+        const matchesRole = filterRole === 'all' || student.role === filterRole;
+        const matchesLevel = filterLevel === 'all' || student.level === filterLevel;
+        
+        return matchesSearch && matchesRole && matchesLevel;
+    });
+    
+    const filteredTeachers = teachers.filter(teacher => {
+        const matchesSearch = `${teacher.firstName || ''} ${teacher.lastName || ''}`.toLowerCase().includes(searchText.toLowerCase()) ||
+            (teacher.email || '').toLowerCase().includes(searchText.toLowerCase()) ||
+            (teacher.username || '').toLowerCase().includes(searchText.toLowerCase());
+        
+        const matchesDepartment = filterDepartment === 'all' || 
+            (teacher.subjects && teacher.subjects.length > 0 && teacher.subjects[0].departmentName === filterDepartment);
+        
+        return matchesSearch && matchesDepartment;
+    });
 
     useEffect(() => {
         if (selectedStudents.length === filteredStudents.length && filteredStudents.length > 0) {
@@ -167,7 +173,11 @@ Cette action est irréversible.`,
 
     const handleGenerateTranscripts = async () => {
         if (selectedStudents.length === 0) {
-            message.warning('Veuillez sélectionner au moins un étudiant');
+            notify({
+                type: 'warning',
+                message: 'Sélection requise',
+                description: 'Veuillez sélectionner au moins un étudiant'
+            });
             return;
         }
 
@@ -428,7 +438,7 @@ Cette action est irréversible.`,
             children: (
                 <Table
                     columns={studentColumns}
-                    dataSource={teachers}
+                    dataSource={filteredTeachers}
                     rowKey={(record) => record.id}
                     loading={loading}
                     pagination={{
@@ -452,7 +462,7 @@ Cette action est irréversible.`,
                     <Card>
                         <Statistic
                             title="Total Utilisateurs"
-                            value={(stats?.totalStudents || computedStats.totalStudents) + (stats?.totalTeachers || computedStats.totalTeachers)}
+                            value={totalStudents + totalTeachers}
                             prefix={<TeamOutlined style={{ color: '#1890ff' }} />}
                             valueStyle={{ color: '#1890ff' }}
                         />
@@ -462,7 +472,7 @@ Cette action est irréversible.`,
                     <Card>
                         <Statistic
                             title="Étudiants"
-                            value={stats?.totalStudents || computedStats.totalStudents}
+                            value={totalStudents}
                             prefix={<UserOutlined style={{ color: '#52c41a' }} />}
                             valueStyle={{ color: '#52c41a' }}
                         />
@@ -472,7 +482,7 @@ Cette action est irréversible.`,
                     <Card>
                         <Statistic
                             title="Enseignants"
-                            value={stats?.totalTeachers || computedStats.totalTeachers}
+                            value={totalTeachers}
                             prefix={<BookOutlined style={{ color: '#fa8c16' }} />}
                             valueStyle={{ color: '#fa8c16' }}
                         />
@@ -482,7 +492,7 @@ Cette action est irréversible.`,
                     <Card>
                         <Statistic
                             title="Actifs"
-                            value={stats?.activeStudents || computedStats.activeStudents}
+                            value={activeStudents}
                             prefix={<TeamOutlined style={{ color: '#13c2c2' }} />}
                             valueStyle={{ color: '#13c2c2' }}
                         />
@@ -557,14 +567,53 @@ Cette action est irréversible.`,
                 <Row style={{ marginBottom: 16 }}>
                     <Col span={24}>
                         <Space direction="vertical" style={{ width: '100%' }}>
-                            <Search
-                                placeholder="Rechercher par nom, email ou username..."
-                                allowClear
-                                size="large"
-                                prefix={<SearchOutlined />}
-                                onChange={(e) => setSearchText(e.target.value)}
-                                style={{ borderRadius: '8px' }}
-                            />
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Search
+                                        placeholder="Rechercher par nom, email ou username..."
+                                        allowClear
+                                        size="large"
+                                        prefix={<SearchOutlined />}
+                                        onChange={(e) => setSearchText(e.target.value)}
+                                        style={{ borderRadius: '8px' }}
+                                    />
+                                </Col>
+                                <Col span={12}>
+                                    <Space>
+                                        {activeTab === 'students' && (
+                                            <>
+                                                <Select
+                                                    value={filterLevel}
+                                                    onChange={setFilterLevel}
+                                                    style={{ width: 120 }}
+                                                    size="large"
+                                                >
+                                                    <Select.Option value="all">Tous niveaux</Select.Option>
+                                                    <Select.Option value="LEVEL1">Licence 1</Select.Option>
+                                                    <Select.Option value="LEVEL2">Licence 2</Select.Option>
+                                                    <Select.Option value="LEVEL3">Licence 3</Select.Option>
+                                                    <Select.Option value="LEVEL4">Master 1</Select.Option>
+                                                    <Select.Option value="LEVEL5">Master 2</Select.Option>
+                                                </Select>
+                                            </>
+                                        )}
+                                        {activeTab === 'teachers' && (
+                                            <Select
+                                                value={filterDepartment}
+                                                onChange={setFilterDepartment}
+                                                style={{ width: 150 }}
+                                                size="large"
+                                                placeholder="Département"
+                                            >
+                                                <Select.Option value="all">Tous départements</Select.Option>
+                                                <Select.Option value="Computer Science">Computer Science</Select.Option>
+                                                <Select.Option value="Mathematics">Mathematics</Select.Option>
+                                                <Select.Option value="Engineering">Engineering</Select.Option>
+                                            </Select>
+                                        )}
+                                    </Space>
+                                </Col>
+                            </Row>
                             {activeTab === 'students' && selectedStudents.length === 0 && (
                                 <div style={{ 
                                     padding: '12px 16px', 
@@ -598,11 +647,10 @@ Cette action est irréversible.`,
                     setIsCreateModalVisible(false);
                     setEditingUser(null);
                 }}
-                onSuccess={() => {
+                onSuccess={(newUser) => {
                     setIsCreateModalVisible(false);
                     setEditingUser(null);
-                    dispatch(fetchAllStudents());
-                    dispatch(fetchAllTeachers());
+                    // Pas de refresh complet - le store est mis à jour automatiquement
                 }}
                 editingUser={editingUser}
             />

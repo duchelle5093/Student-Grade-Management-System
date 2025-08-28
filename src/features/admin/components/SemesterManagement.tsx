@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Form, Input, DatePicker, Switch, Space, Modal, message } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Table, Button, Form, Input, DatePicker, Switch, Space, Modal, Tag } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../../store';
-import { fetchSemesters, createSemester, updateSemesters, deleteSemester } from '../../semesters/actions';
+import { fetchSemesters, createSemester, updateSemester, deleteSemester } from '../../semesters/actions';
 import { SemesterResDto } from '../../../api/reponse-dto/semester.res.dto';
+import { useNotification } from '../../../contexts';
 import dayjs from 'dayjs';
 
 export const SemesterManagement: React.FC = () => {
     const dispatch = useAppDispatch();
+    const { notify } = useNotification();
     const { semesters, loading } = useAppSelector(state => state.semesters);
     
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -30,54 +32,98 @@ export const SemesterManagement: React.FC = () => {
             name: semester.name,
             startDate: dayjs(semester.startDate),
             endDate: dayjs(semester.endDate),
-            active: semester.active,
-            orderIndex: semester.orderIndex
+            active: semester.active
         });
         setIsModalVisible(true);
     };
 
+    const handleToggleActive = async (semester: SemesterResDto) => {
+        try {
+            const payload = {
+                ...semester,
+                active: !semester.active
+            };
+            await dispatch(updateSemester(payload)).unwrap();
+            notify({ 
+                type: 'success', 
+                message: 'Succès', 
+                description: `Semestre ${payload.active ? 'activé' : 'désactivé'} avec succès` 
+            });
+            dispatch(fetchSemesters());
+        } catch (error) {
+            notify({ type: 'error', message: 'Erreur', description: 'Erreur lors de la modification' });
+        }
+    };
+
     const handleDelete = (semester: SemesterResDto) => {
+        const hasDependencies = semester.active; // Simplification - en réalité vérifier périodes/notes
+        
         Modal.confirm({
             title: 'Confirmer la suppression',
-            content: `Êtes-vous sûr de vouloir supprimer le semestre "${semester.name}" ?`,
+            content: hasDependencies 
+                ? `Attention: Le semestre "${semester.name}" est actif et peut contenir des données. Êtes-vous sûr de vouloir le supprimer ?`
+                : `Êtes-vous sûr de vouloir supprimer le semestre "${semester.name}" ?`,
+            okType: hasDependencies ? 'danger' : 'primary',
             onOk: async () => {
                 try {
                     await dispatch(deleteSemester(semester.id)).unwrap();
-                    message.success('Semestre supprimé');
+                    notify({ type: 'success', message: 'Succès', description: 'Semestre supprimé avec succès' });
                 } catch (error) {
-                    message.error('Erreur lors de la suppression');
+                    notify({ type: 'error', message: 'Erreur', description: 'Erreur lors de la suppression' });
                 }
             }
         });
     };
 
+    const validateDates = (startDate: dayjs.Dayjs, endDate: dayjs.Dayjs) => {
+        if (startDate.isAfter(endDate)) {
+            throw new Error('La date de début doit être antérieure à la date de fin');
+        }
+        
+        const existingSemesters = semesters.filter(s => editingSemester ? s.id !== editingSemester.id : true);
+        const hasOverlap = existingSemesters.some(semester => {
+            const semStart = dayjs(semester.startDate);
+            const semEnd = dayjs(semester.endDate);
+            return (startDate.isBefore(semEnd) && endDate.isAfter(semStart));
+        });
+        
+        if (hasOverlap) {
+            throw new Error('Les dates se chevauchent avec un autre semestre');
+        }
+    };
+
     const handleSubmit = async (values: any) => {
         try {
+            validateDates(values.startDate, values.endDate);
+            
             if (editingSemester) {
-                const payload = [{
+                const payload = {
                     id: editingSemester.id,
                     name: values.name,
                     startDate: values.startDate.format('YYYY-MM-DD'),
                     endDate: values.endDate.format('YYYY-MM-DD'),
                     active: values.active || false,
-                    orderIndex: values.orderIndex || 1
-                }];
-                await dispatch(updateSemesters(payload)).unwrap();
-                message.success('Semestre modifié');
+                    orderIndex: editingSemester.orderIndex
+                };
+                await dispatch(updateSemester(payload)).unwrap();
+                notify({ type: 'success', message: 'Succès', description: 'Semestre modifié avec succès' });
             } else {
+                const nextOrder = Math.max(...semesters.map(s => s.orderIndex), 0) + 1;
                 const payload = {
                     name: values.name,
                     startDate: values.startDate.format('YYYY-MM-DD'),
                     endDate: values.endDate.format('YYYY-MM-DD'),
-                    active: values.active || false
+                    active: values.active || false,
+                    orderIndex: nextOrder
                 };
                 await dispatch(createSemester(payload)).unwrap();
-                message.success('Semestre créé');
+                notify({ type: 'success', message: 'Succès', description: 'Semestre créé avec succès' });
             }
 
             setIsModalVisible(false);
-        } catch (error) {
-            message.error('Erreur lors de l\'opération');
+            dispatch(fetchSemesters());
+        } catch (error: any) {
+            notify({ type: 'error', message: 'Erreur', description: error.message || 'Erreur lors de l\'opération' });
         }
     };
 
@@ -100,17 +146,29 @@ export const SemesterManagement: React.FC = () => {
             render: (date: string) => dayjs(date).format('DD/MM/YYYY')
         },
         {
-            title: 'Actif',
+            title: 'Statut',
             dataIndex: 'active',
             key: 'active',
-            render: (active: boolean) => (
-                <Switch checked={active} disabled />
+            render: (active: boolean, record: SemesterResDto) => (
+                <Space>
+                    {active ? (
+                        <Tag color="green" icon={<CheckCircleOutlined />}>Actif</Tag>
+                    ) : (
+                        <Tag color="default">Inactif</Tag>
+                    )}
+                    <Switch 
+                        checked={active} 
+                        size="small"
+                        onChange={() => handleToggleActive(record)}
+                    />
+                </Space>
             )
         },
         {
             title: 'Ordre',
             dataIndex: 'orderIndex',
             key: 'orderIndex',
+            sorter: (a: SemesterResDto, b: SemesterResDto) => a.orderIndex - b.orderIndex,
         },
         {
             title: 'Actions',
@@ -152,15 +210,44 @@ export const SemesterManagement: React.FC = () => {
                 dataSource={semesters}
                 rowKey="id"
                 loading={loading}
-                pagination={{ pageSize: 5 }}
+                pagination={{ pageSize: 10 }}
+                defaultSortOrder="ascend"
+                rowClassName={(record) => record.active ? 'active-semester-row' : ''}
             />
 
             <Modal
                 title={editingSemester ? 'Modifier le semestre' : 'Créer un semestre'}
                 open={isModalVisible}
                 onCancel={() => setIsModalVisible(false)}
-                onOk={() => form.submit()}
-                confirmLoading={loading}
+                footer={[
+                    <div key="footer" style={{ display: 'flex', gap: '12px', width: '100%' }}>
+                        <Button 
+                            key="cancel" 
+                            onClick={() => setIsModalVisible(false)}
+                            style={{ 
+                                flex: 1, 
+                                borderColor: '#ff4d4f', 
+                                color: '#ff4d4f',
+                                backgroundColor: '#fff'
+                            }}
+                        >
+                            Annuler
+                        </Button>
+                        <Button 
+                            key="confirm" 
+                            type="primary" 
+                            onClick={() => form.submit()}
+                            loading={loading}
+                            style={{ 
+                                flex: 1, 
+                                backgroundColor: '#6EADFF', 
+                                borderColor: '#6EADFF' 
+                            }}
+                        >
+                            Confirmer
+                        </Button>
+                    </div>
+                ]}
             >
                 <Form
                     form={form}
@@ -191,21 +278,26 @@ export const SemesterManagement: React.FC = () => {
                         <DatePicker style={{ width: '100%' }} />
                     </Form.Item>
 
-                    <Form.Item
-                        name="orderIndex"
-                        label="Ordre"
-                        rules={[{ required: true, message: 'L\'ordre est requis' }]}
-                    >
-                        <Input type="number" placeholder="1" />
-                    </Form.Item>
-
-                    <Form.Item
-                        name="active"
-                        label="Semestre actif"
-                        valuePropName="checked"
-                    >
-                        <Switch />
-                    </Form.Item>
+                    {!editingSemester && (
+                        <Form.Item
+                            name="active"
+                            label="Activer ce semestre"
+                            valuePropName="checked"
+                            extra="Attention: Activer ce semestre désactivera automatiquement les autres"
+                        >
+                            <Switch />
+                        </Form.Item>
+                    )}
+                    
+                    {editingSemester && (
+                        <Form.Item
+                            name="active"
+                            label="Semestre actif"
+                            valuePropName="checked"
+                        >
+                            <Switch />
+                        </Form.Item>
+                    )}
                 </Form>
             </Modal>
         </div>

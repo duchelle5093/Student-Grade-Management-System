@@ -172,9 +172,15 @@ export const SubjectsManagement = () => {
                 const currentTeacher = teachers.find(t => t.id === record.teacherId);
                 
                 return currentTeacher ? (
-                    <Text>{currentTeacher.firstName} {currentTeacher.lastName}</Text>
+                    <Space>
+                        <Tag color="green" icon={<UserOutlined />}>
+                            {currentTeacher.firstName} {currentTeacher.lastName}
+                        </Tag>
+                    </Space>
                 ) : (
-                    <Text type="secondary">Non assigné</Text>
+                    <Tag color="red" icon={<UserOutlined />}>
+                        Non assigné
+                    </Tag>
                 );
             },
         },
@@ -182,11 +188,21 @@ export const SubjectsManagement = () => {
             title: 'Statut',
             dataIndex: 'active',
             key: 'active',
-            render: (active: boolean) => (
-                <Tag color={active ? 'green' : 'red'}>
-                    {active ? 'Actif' : 'Inactif'}
-                </Tag>
-            ),
+            render: (active: boolean, record: SubjectResDto) => {
+                const hasTeacher = !!record.teacherId;
+                return (
+                    <Space direction="vertical" size="small">
+                        <Tag color={active ? 'green' : 'red'}>
+                            {active ? 'Actif' : 'Inactif'}
+                        </Tag>
+                        {active && !hasTeacher && (
+                            <Tag color="orange" size="small">
+                                Sans enseignant
+                            </Tag>
+                        )}
+                    </Space>
+                );
+            },
         },
         {
             title: 'Actions',
@@ -347,6 +363,9 @@ export const SubjectsManagement = () => {
                                 showQuickJumper: false,
                             }}
                             scroll={{ x: true }}
+                            rowClassName={(record) => 
+                                !record.teacherId ? 'subject-without-teacher' : ''
+                            }
                         />
                     </Card>
                 </Col>

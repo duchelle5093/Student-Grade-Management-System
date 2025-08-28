@@ -507,62 +507,63 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
 
                 <Divider />
 
-                <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    gap: '10%'
-                }}>
-                    <div style={{ width: '45%' }}>
-                        {currentStep > 0 && !(editingUser && currentStep === 1) ? (
-                            <Button 
-                                onClick={handlePrev}
-                                size="large"
-                                style={{ width: '100%' }}
-                                type="default"
-                            >
-                                Précédent
-                            </Button>
-                        ) : (
-                            <Button 
-                                onClick={handleCancel}
-                                size="large"
-                                style={{ width: '100%' }}
-                                danger
-                            >
-                                Annuler
-                            </Button>
-                        )}
-                    </div>
-                    <div style={{ width: '45%' }}>
-                        {currentStep < steps.length - 1 ? (
-                            <Button 
-                                type="primary" 
-                                onClick={handleNext}
-                                size="large"
-                                style={{ 
-                                    width: '100%',
-                                    backgroundColor: ColorTheme.PRIMARY,
-                                    borderColor: ColorTheme.PRIMARY
-                                }}
-                            >
-                                Suivant
-                            </Button>
-                        ) : (
-                            <Button 
-                                type="primary" 
-                                onClick={handleSubmit}
-                                loading={loading}
-                                size="large"
-                                style={{ 
-                                    width: '100%',
-                                    backgroundColor: ColorTheme.PRIMARY,
-                                    borderColor: ColorTheme.PRIMARY
-                                }}
-                            >
-                                {editingUser ? 'Modifier l\'utilisateur' : 'Créer l\'utilisateur'}
-                            </Button>
-                        )}
-                    </div>
+                <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+                    {currentStep > 0 && !(editingUser && currentStep === 1) ? (
+                        <Button 
+                            onClick={handlePrev}
+                            size="large"
+                            style={{ 
+                                flex: 1, 
+                                borderColor: '#ff4d4f', 
+                                color: '#ff4d4f',
+                                backgroundColor: '#fff'
+                            }}
+                        >
+                            Précédent
+                        </Button>
+                    ) : (
+                        <Button 
+                            onClick={handleCancel}
+                            size="large"
+                            style={{ 
+                                flex: 1, 
+                                borderColor: '#ff4d4f', 
+                                color: '#ff4d4f',
+                                backgroundColor: '#fff'
+                            }}
+                        >
+                            Annuler
+                        </Button>
+                    )}
+                    
+                    {currentStep < steps.length - 1 ? (
+                        <Button 
+                            type="primary" 
+                            onClick={handleNext}
+                            size="large"
+                            style={{ 
+                                flex: 1,
+                                backgroundColor: '#6EADFF',
+                                borderColor: '#6EADFF'
+                            }}
+                        >
+                            Suivant
+                        </Button>
+                    ) : (
+                        <Button 
+                            type="primary" 
+                            onClick={handleSubmit}
+                            loading={loading}
+                            size="large"
+                            style={{ 
+                                flex: 1,
+                                backgroundColor: '#6EADFF',
+                                borderColor: '#6EADFF'
+                            }}
+                        >
+                            {editingUser ? 'Modifier' : 'Créer'}
+                        </Button>
+                    )}
                 </div>
             </Form>
 

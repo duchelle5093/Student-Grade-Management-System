@@ -551,7 +551,16 @@ const AcademicPeriodsManager = () => {
                 open={isSemesterModalVisible}
                 onCancel={() => setIsSemesterModalVisible(false)}
                 footer={[
-                    <Button key="cancel" onClick={() => setIsSemesterModalVisible(false)}>
+                    <Button 
+                        key="cancel" 
+                        onClick={() => setIsSemesterModalVisible(false)}
+                        style={{ 
+                            width: '100%', 
+                            borderColor: '#ff4d4f', 
+                            color: '#ff4d4f',
+                            backgroundColor: '#fff'
+                        }}
+                    >
                         Fermer
                     </Button>
                 ]}

@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { SemesterResDto } from '../../api/reponse-dto/semester.res.dto';
-import { fetchSemesters, fetchActiveSemester, createSemester, updateSemesters, deleteSemester } from './actions';
+import { fetchSemesters, fetchActiveSemester, createSemester, updateSemester, updateSemesters, deleteSemester } from './actions';
 
 interface SemestersState {
     semesters: SemesterResDto[];
@@ -56,11 +56,34 @@ const semestersSlice = createSlice({
             })
             .addCase(createSemester.fulfilled, (state, action) => {
                 state.loading = false;
+                // Si le nouveau semestre est actif, désactiver les autres
+                if (action.payload.active) {
+                    state.semesters.forEach(s => s.active = false);
+                }
                 state.semesters.push(action.payload);
             })
             .addCase(createSemester.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.error.message || 'Failed to create semester';
+            })
+            .addCase(updateSemester.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(updateSemester.fulfilled, (state, action) => {
+                state.loading = false;
+                const index = state.semesters.findIndex(s => s.id === action.payload.id);
+                if (index !== -1) {
+                    // Si le semestre devient actif, désactiver les autres
+                    if (action.payload.active) {
+                        state.semesters.forEach(s => s.active = false);
+                    }
+                    state.semesters[index] = action.payload;
+                }
+            })
+            .addCase(updateSemester.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message || 'Failed to update semester';
             })
             .addCase(updateSemesters.pending, (state) => {
                 state.loading = true;

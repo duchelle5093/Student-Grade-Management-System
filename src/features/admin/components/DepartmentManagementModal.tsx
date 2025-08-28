@@ -256,19 +256,31 @@ export const DepartmentManagementModal: React.FC<DepartmentManagementModalProps>
                                         </Form.Item>
                                     </Col>
                                 </Row>
-                                <Space>
+                                <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+                                    <Button 
+                                        onClick={() => setShowForm(false)}
+                                        style={{ 
+                                            flex: 1, 
+                                            borderColor: '#ff4d4f', 
+                                            color: '#ff4d4f',
+                                            backgroundColor: '#fff'
+                                        }}
+                                    >
+                                        Annuler
+                                    </Button>
                                     <Button 
                                         type="primary" 
                                         htmlType="submit"
                                         loading={loading}
-                                        style={{ backgroundColor: '#6EADFF', borderColor: '#6EADFF' }}
+                                        style={{ 
+                                            flex: 1, 
+                                            backgroundColor: '#6EADFF', 
+                                            borderColor: '#6EADFF' 
+                                        }}
                                     >
                                         {editingDept ? 'Modifier' : 'Créer'}
                                     </Button>
-                                    <Button onClick={() => setShowForm(false)}>
-                                        Annuler
-                                    </Button>
-                                </Space>
+                                </div>
                             </Form>
                         </div>
                     )}

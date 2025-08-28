@@ -31,6 +31,7 @@ export const createSemester = createAsyncThunk<SemesterResDto, {
     startDate: string;
     endDate: string;
     active: boolean;
+    orderIndex: number;
 }>(
     'semesters/createSemester',
     async (semesterData, { rejectWithValue }) => {
@@ -39,6 +40,25 @@ export const createSemester = createAsyncThunk<SemesterResDto, {
             return response;
         } catch (error) {
             return rejectWithValue('Failed to create semester') || error;
+        }
+    }
+);
+
+export const updateSemester = createAsyncThunk<SemesterResDto, {
+    id: number;
+    name: string;
+    startDate: string;
+    endDate: string;
+    active: boolean;
+    orderIndex: number;
+}>(
+    'semesters/updateSemester',
+    async (semesterData, { rejectWithValue }) => {
+        try {
+            const response = await semesterService.updateSemester(semesterData);
+            return response;
+        } catch (error) {
+            return rejectWithValue('Failed to update semester') || error;
         }
     }
 );
