@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Form, Input, DatePicker, Switch, Space, Modal, Tag } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { EditOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../../store';
-import { fetchSemesters, createSemester, updateSemester, deleteSemester } from '../../semesters/actions';
+import { fetchSemesters, updateSemester } from '../../semesters/actions';
 import { SemesterResDto } from '../../../api/reponse-dto/semester.res.dto';
 import { useNotification } from '../../../contexts';
 import dayjs from 'dayjs';

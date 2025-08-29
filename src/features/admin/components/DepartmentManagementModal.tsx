@@ -11,8 +11,7 @@ import {
     Tag,
     Typography,
     Row,
-    Col,
-    Divider
+    Col
 } from 'antd';
 import { 
     PlusOutlined, 

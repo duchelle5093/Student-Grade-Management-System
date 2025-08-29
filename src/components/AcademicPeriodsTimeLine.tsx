@@ -68,7 +68,7 @@ const convertGradingWindowToPeriod = (window: GradingWindowResponse) => ({
 
 export const AcademicTimeline: React.FC = () => {
     const dispatch = useAppDispatch();
-    const { gradingWindows = [], loading = false } = useAppSelector(state => state.admin || {});
+    const { gradingWindows = [] } = useAppSelector(state => state.admin || {});
     const [periods, setPeriods] = useState<Period[]>([]);
     const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
 

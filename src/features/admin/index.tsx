@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Button, Modal, Select, Typography, Tabs, DatePicker, Spin } from 'antd';
+import  { useState, useEffect } from 'react';
+import { Button, Modal,Typography, Tabs, DatePicker} from 'antd';
 import { EditOutlined } from '@ant-design/icons';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -115,7 +115,7 @@ const AcademicPeriodsManager = () => {
         id: period.id.toString(),
         name: period.name,
         shortName: period.shortName,
-        type: (period.periodLabel || period.shortName) as 'CC_1' | 'SN_1' | 'CC_2' | 'SN_2',
+        type: (period.shortName || period.shortName) as 'CC_1' | 'SN_1' | 'CC_2' | 'SN_2',
         semester: period.semester,
         startDate: period.startDate,
         endDate: period.endDate,

@@ -2,7 +2,7 @@
 import { pdf } from '@react-pdf/renderer';
 import { saveAs } from 'file-saver';
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { Document, Page, Text, StyleSheet } from '@react-pdf/renderer';
 
 const styles = StyleSheet.create({
   page: {

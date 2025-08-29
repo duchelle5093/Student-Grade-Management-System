@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../store';
 import { listGradeClaims } from '../features/grades/actions';
-import { GradeClaimResDto } from '../api/reponse-dto/gradeClaim.res.dto';
+
 
 export const useClaims = () => {
     const dispatch = useAppDispatch();

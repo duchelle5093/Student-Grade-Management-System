@@ -14,7 +14,6 @@ import {
 import { useAppDispatch } from '../store';
 import { createGradingWindow } from '../features/admin/actions';
 import { useNotification } from '../contexts/notification/context';
-import dayjs from 'dayjs';
 
 const { Option } = Select;
 
@@ -79,7 +78,7 @@ export const CreatePeriodModal: React.FC<CreatePeriodModalProps> = ({
     };
 
     // Validation des dates pour éviter les chevauchements
-    const validateEndDate = (_, value) => {
+    const validateEndDate = (_: any, value: any) => {
         const startDate = form.getFieldValue('startDate');
         if (startDate && value && value.isBefore(startDate)) {
             return Promise.reject('La date de fin doit être après la date de début');

@@ -1,6 +1,6 @@
-import { studentResDto } from "../../api/reponse-dto/user.res.dto";
 
-export const FakeStudents: studentResDto[] = [
+
+export const FakeStudents: any[] = [
   {
     id: 1,
     firstName: "Alice",

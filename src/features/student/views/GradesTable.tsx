@@ -143,7 +143,8 @@ export default function GradesTable({ student }: GradesTableProps) {
         lastName: student.lastName || '',
         username: student.username || student.studentId?.toString() || '',
         email: student.email || '',
-        level: student.level || ''
+        level: student.level || '',
+        gpa: student.gpa || 0
       };
 
       const grades = groupedGrades.map(grade => ({
@@ -151,6 +152,10 @@ export default function GradesTable({ student }: GradesTableProps) {
         subjectName: grade.subjectName,
         creditsEarned: grade.creditsEarned,
         value: grade.total,
+        cc1: grade.cc1,
+        cc2: grade.cc2,
+        sn1: grade.sn1,
+        sn2: grade.sn2,
         semesterName: grade.semesterName,
         periodLabel: 'Total',
         passed: grade.passed

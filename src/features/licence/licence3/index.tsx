@@ -64,7 +64,7 @@ export const Licence3 = () => {
     /** FLOW CORRECT: TOUS les étudiants L3 + leurs notes pour la matière sélectionnée */
     const mergedRows = useMemo((): StudentGradeRow[] => {
         return filteredStudents.map((student) => {
-            const studentId = student.id || student.studentId;
+            const studentId = student.studentId || student.studentId;
             const studentName = student.studentName || 
                 [student.firstName, student.lastName].filter(Boolean).join(" ") ||
                 student.username ||
@@ -155,11 +155,6 @@ export const Licence3 = () => {
                 }
             }
 
-            if (payloads.length === 0) {
-                notify({ type: "warning", message: "Aucune note valide à enregistrer" });
-                setIsTableEditable(false);
-                return;
-            }
 
             for (const payload of payloads) {
                 if ("id" in payload) {

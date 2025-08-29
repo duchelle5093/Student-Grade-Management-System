@@ -3,7 +3,15 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { useState } from "react";
-import {Period} from "./AcademicPeriodsTimeLine.tsx";
+
+
+interface Period {
+    id: string;
+    label: string;
+    start: string;
+    end: string;
+    color: string;
+}
 
 interface EditPeriodModalProps {
     period: Period;

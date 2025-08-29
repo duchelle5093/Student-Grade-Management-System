@@ -2,8 +2,7 @@ import { Badge, Breadcrumb, Button, Dropdown, MenuProps } from "antd";
 
 import { useContext } from "react";
 import { DrawerSidebarContext, PageTitleContext } from "../contexts";
-import next from "../images/next.png";
-import back from "../images/back.png";
+
 import UserIcon from "@heroicons/react/24/solid/esm/UserIcon";
 import { store } from "../store";
 import { Link, useLocation } from "react-router";

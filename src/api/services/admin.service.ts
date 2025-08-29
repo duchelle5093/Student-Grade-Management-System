@@ -1,7 +1,7 @@
 import { AxiosInstance } from 'axios';
 import { StudentDataResDto } from '../reponse-dto/student.res.dto';
 import {CreateSubjectReqDto, SubjectResDto} from '../reponse-dto/subjects.res.dto';
-import { RegisterReqDto } from '../request-dto/auth.req';
+
 import { 
     CreateTeacherReqDto, 
     CreateDepartmentReqDto, 

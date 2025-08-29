@@ -9,8 +9,7 @@ interface ActivePeriodIndicatorProps {
 }
 
 export const ActivePeriodIndicator: React.FC<ActivePeriodIndicatorProps> = ({
-    showRefreshButton = true,
-    size = 'default'
+    showRefreshButton = true
 }) => {
     const { activePeriod, loading, refreshPeriod, isPollingEnabled } = useActivePeriodPolling();
 
@@ -22,18 +21,7 @@ export const ActivePeriodIndicator: React.FC<ActivePeriodIndicatorProps> = ({
         return 'default';
     };
 
-    const formatPeriodName = (shortName?: string) => {
-        if (!shortName) return 'CC_1 (par défaut)';
-        
-        const mapping: Record<string, string> = {
-            "CC_1": "Contrôle Continu #1",
-            "SN_1": "Session Normale #1",
-            "CC_2": "Contrôle Continu #2",
-            "SN_2": "Session Normale #2"
-        };
-        
-        return mapping[shortName] || shortName;
-    };
+
 
     return (
         <Space>

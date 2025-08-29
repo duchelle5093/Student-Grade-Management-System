@@ -5,7 +5,7 @@ import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { GradesEdition } from "./GradesEditionBtn";
 import { EditPvButton } from "./EditPvButton";
 import { ReclamationsDetails } from "../features/reclamations";
-import { StudentWithClaims, ClaimData } from "../features/teacher/mockClaimsData";
+import { ClaimData } from "../features/teacher/mockClaimsData";
 import { gradeService } from "../api/configs";
 import { useNotification } from "../contexts";
 import { useActivePeriodPolling, useClaims } from "../hooks";
@@ -24,7 +24,7 @@ interface StudentGradeRow {
 interface TeacherGradesTableProps {
     isEditable: boolean;
     data: StudentGradeRow[];
-    studentsWithClaims?: StudentWithClaims[];
+    studentsWithClaims?: any[];
     onGradesChange?: (data: StudentGradeRow[]) => void;
     onEdit: () => void;
     onConfirm: () => void;
@@ -48,7 +48,7 @@ export const TeacherGradesTable = ({
     const [editingData, setEditingData] = useState<StudentGradeRow[]>(data);
     const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
     const [selectedClaim, setSelectedClaim] = useState<ClaimData | null>(null);
-    const [selectedStudent] = useState<StudentWithClaims | null>(null);
+
     const [rejectReason, setRejectReason] = useState("");
     const { notify } = useNotification();
     
@@ -69,11 +69,7 @@ export const TeacherGradesTable = ({
 
 
 
-    // Vérifier si un étudiant a une revendication pour une période donnée
-    const getClaimForStudentPeriod = (studentId: number, period: "cc1" | "sn1" | "cc2" | "sn2"): boolean => {
-        const claims = getClaimsForStudent(studentId, period);
-        return claims.length > 0;
-    };
+
 
     const getStudentGrade = (studentId: number, field: "cc1" | "sn1" | "cc2" | "sn2") => {
         const student = editingData.find(s => s.studentId === studentId);
@@ -101,7 +97,16 @@ export const TeacherGradesTable = ({
         const claims = getClaimsForStudent(studentId, period);
         
         if (claims.length > 0) {
-            setSelectedClaim(claims[0]); // Prendre la première réclamation
+            // Transformer la réclamation API en format attendu par la modal
+            const apiClaim = claims[0];
+            const transformedClaim = {
+                id: apiClaim.id.toString(),
+                period: period,
+                requestedScore: apiClaim.requestedScore,
+                cause: apiClaim.cause,
+                description: apiClaim.description
+            };
+            setSelectedClaim(transformedClaim);
             setIsClaimModalOpen(true);
         }
     };
@@ -119,7 +124,6 @@ export const TeacherGradesTable = ({
             refreshClaims(); // Actualiser les réclamations
             setIsClaimModalOpen(false);
             setSelectedClaim(null);
-            setSelectedStudent(null);
         } catch (error) {
             notify({
                 type: 'error',
@@ -142,7 +146,6 @@ export const TeacherGradesTable = ({
             refreshClaims(); // Actualiser les réclamations
             setIsClaimModalOpen(false);
             setSelectedClaim(null);
-            setSelectedStudent(null);
             setRejectReason("");
         } catch (error) {
             notify({
@@ -180,8 +183,8 @@ export const TeacherGradesTable = ({
                 if (!record || !record.studentId) return "-";
                 
                 const grade = getStudentGrade(record.studentId, field as any);
-                const claim = getClaimForStudent(record.studentId, field as any);
-                const hasClaim = claim !== null;
+                const claims = getClaimsForStudent(record.studentId, field as any);
+                const hasClaim = claims.length > 0;
 
                 // Seul le polling détermine les colonnes éditables
                 const currentEditableColumns = Array.isArray(pollingEditableColumns) ? pollingEditableColumns : [];
@@ -336,16 +339,15 @@ export const TeacherGradesTable = ({
                 onCancel={() => {
                     setIsClaimModalOpen(false);
                     setSelectedClaim(null);
-                    setSelectedStudent(null);
                     setRejectReason("");
                 }}
                 footer={null}
                 width={600}
             >
-                {selectedStudent && selectedClaim && (
+                {selectedClaim && (
                     <ReclamationsDetails
-                        student={selectedStudent as any}
-                        currentTopic={selectedStudent.grades[0] as any}
+                        student={{} as any}
+                        currentTopic={{} as any}
                         formValues={{
                             period: selectedClaim.period,
                             requestedScore: selectedClaim.requestedScore,

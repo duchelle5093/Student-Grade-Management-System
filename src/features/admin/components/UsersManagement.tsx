@@ -23,11 +23,8 @@ import {
     SearchOutlined,
     TeamOutlined,
     BookOutlined,
-    DownloadOutlined,
     EditOutlined,
     DeleteOutlined,
-    FilterOutlined,
-    FileExcelOutlined,
     FilePdfOutlined
 } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../../store';
@@ -36,8 +33,7 @@ import { CreateUserModal } from './CreateUserModal';
 import { ExportModal } from './ExportModal';
 import { useNotification } from '../../../contexts';
 import {AppButton} from "../../../components";
-import { exportUsersToExcel, exportUsersToPDF } from '../../../utils/exportUtils';
-import { exportSimplePDF } from '../../../utils/simplePDF.tsx';
+
 import { adminReportsService } from '../../../api/configs';
 import { saveAs } from 'file-saver';
 
@@ -63,7 +59,7 @@ export const UsersManagement = () => {
     const [selectAll, setSelectAll] = useState(false);
     const [generatingTranscripts, setGeneratingTranscripts] = useState(false);
     const [selectedPeriod, setSelectedPeriod] = useState('CC_1');
-    const [filterRole, setFilterRole] = useState<string>('all');
+    const [filterRole] = useState<string>('all');
     const [filterLevel, setFilterLevel] = useState<string>('all');
     const [filterDepartment, setFilterDepartment] = useState<string>('all');
     

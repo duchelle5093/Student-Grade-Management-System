@@ -242,12 +242,17 @@ interface PDFDocumentProps {
     username: string;
     email: string;
     level: string;
+    gpa?: number;
   };
   grades: Array<{
     subjectCode: string;
     subjectName: string;
     creditsEarned: number;
     value: number;
+    cc1?: number;
+    cc2?: number;
+    sn1?: number;
+    sn2?: number;
     semesterName: string;
     periodLabel: string;
     passed: boolean;
@@ -322,28 +327,28 @@ export const PDFDocument: React.FC<PDFDocumentProps> = ({ studentData, grades })
         <View style={styles.gradesTable}>
           <View style={styles.tableHeader}>
             <View style={styles.codeCell}>
-              <Text style={styles.headerText}>Code UE</Text>
+              <Text style={styles.headerText}>Code</Text>
             </View>
             <View style={styles.titleCell}>
-              <Text style={styles.headerText}>Intitulé de l'UE</Text>
+              <Text style={styles.headerText}>Intitulé de la matière</Text>
+            </View>
+            <View style={styles.gradeCell}>
+              <Text style={styles.headerText}>CC_1</Text>
+            </View>
+            <View style={styles.gradeCell}>
+              <Text style={styles.headerText}>CC_2</Text>
+            </View>
+            <View style={styles.gradeCell}>
+              <Text style={styles.headerText}>SN_1</Text>
+            </View>
+            <View style={styles.gradeCell}>
+              <Text style={styles.headerText}>SN_2</Text>
             </View>
             <View style={styles.creditCell}>
               <Text style={styles.headerText}>Crédit</Text>
             </View>
-            <View style={styles.gradeCell}>
-              <Text style={styles.headerText}>Note /100</Text>
-            </View>
-            <View style={styles.mentionCell}>
-              <Text style={styles.headerText}>Mention</Text>
-            </View>
-            <View style={styles.semesterCell}>
-              <Text style={styles.headerText}>Semestre</Text>
-            </View>
-            <View style={styles.yearCell}>
-              <Text style={styles.headerText}>Période</Text>
-            </View>
             <View style={styles.decisionCell}>
-              <Text style={styles.headerText}>Statut</Text>
+              <Text style={styles.headerText}>Décision</Text>
             </View>
           </View>
           {grades.map((grade, index) => (
@@ -354,33 +359,33 @@ export const PDFDocument: React.FC<PDFDocumentProps> = ({ studentData, grades })
               <View style={styles.titleCell}>
                 <Text style={styles.cellTextLeft}>{grade.subjectName}</Text>
               </View>
+              <View style={styles.gradeCell}>
+                <Text style={styles.cellText}>{grade.cc1 || "-"}</Text>
+              </View>
+              <View style={styles.gradeCell}>
+                <Text style={styles.cellText}>{grade.cc2 || "-"}</Text>
+              </View>
+              <View style={styles.gradeCell}>
+                <Text style={styles.cellText}>{grade.sn1 || "-"}</Text>
+              </View>
+              <View style={styles.gradeCell}>
+                <Text style={styles.cellText}>{grade.sn2 || "-"}</Text>
+              </View>
               <View style={styles.creditCell}>
                 <Text style={styles.cellText}>{grade.creditsEarned}</Text>
               </View>
-              <View style={styles.gradeCell}>
-                <Text style={styles.cellText}>{grade.value.toFixed(2)}</Text>
-              </View>
-              <View style={styles.mentionCell}>
-                <Text style={styles.cellText}>{calculateMention(grade.value)}</Text>
-              </View>
-              <View style={styles.semesterCell}>
-                <Text style={styles.cellText}>{grade.semesterName}</Text>
-              </View>
-              <View style={styles.yearCell}>
-                <Text style={styles.cellText}>{grade.periodLabel}</Text>
-              </View>
               <View style={styles.decisionCell}>
-                <Text style={styles.cellText}>{grade.passed ? 'VALIDÉ' : 'NON VALIDÉ'}</Text>
+                <Text style={styles.cellText}>{grade.passed ? 'VALIDÉ' : 'ÉCHEC'}</Text>
               </View>
             </View>
           ))}
         </View>
 
-        {/* Section résumé */}
+        {/* Section moyenne générale */}
         <View style={styles.summarySection}>
           <View style={styles.summaryLeft}>
             <Text style={styles.summaryText}>Total Crédits : {totalCredits}</Text>
-            <Text style={styles.summaryText}>Moyenne Générale : {mgp}/100</Text>
+            <Text style={[styles.summaryText, { fontSize: 12, fontWeight: 'bold' }]}>Moyenne Générale (GPA) : {studentData.gpa ? studentData.gpa.toFixed(2) : mgp}</Text>
             <Text style={styles.summaryText}>Statut : {grades.every(g => g.passed) ? 'VALIDÉ' : 'EN COURS'}</Text>
           </View>
           <View style={styles.summaryRight}>

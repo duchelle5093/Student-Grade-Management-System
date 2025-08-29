@@ -20,15 +20,13 @@ import {
     UserOutlined, 
     MailOutlined, 
     IdcardOutlined,
-    CalendarOutlined,
-    EnvironmentOutlined,
     BookOutlined,
     KeyOutlined
 } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../../store';
 import { createUser, updateUser, fetchAllDepartments } from '../actions';
 import { Role, AcademicLevel, ColorTheme } from '../../../api/enums';
-import dayjs from 'dayjs';
+
 import { useNotification } from '../../../contexts/notification/context';
 
 const { Title, Text } = Typography;

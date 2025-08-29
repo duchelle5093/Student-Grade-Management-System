@@ -5,9 +5,7 @@ import { AppButton, Stepper } from "../../components";
 import { ReclamationValuesProps } from "../student/views/GradesTable.tsx";
 import {ReclamationsDetails} from "./ReclamtionDetails.tsx";
 import {StudentDataResDto, StudentTopicResDto} from "../../api/reponse-dto/student.res.dto.ts";
-import {GradeClaimReqDto} from "../../api/request-dto/gradeClaim.req.dto.ts";
-import {useAppDispatch} from "../../store";
-import {submitGradeClaim} from "../grades";
+
 import { useNotification } from "../../contexts";
 
 
@@ -33,8 +31,7 @@ export default function Reclamations({
 
   const ReclamationForm = () => {
       const { handleNext } = useContext(StepperContext);
-      const dispatch = useAppDispatch();
-      const { notify } = useNotification();
+
 
 
     const onFinish = async (values: any) => {

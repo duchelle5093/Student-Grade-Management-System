@@ -1,7 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { adminService, adminReportsService } from '../../api/configs';
-import { StudentDataResDto } from '../../api/reponse-dto/student.res.dto';
-import { TeacherResDto, AdminStatsResDto, DepartmentResDto } from '../../api/reponse-dto/admin.res.dto';
 import { CreateTeacherReqDto } from '../../api/request-dto/admin.req.dto';
 import { Role } from '../../api/enums';
 

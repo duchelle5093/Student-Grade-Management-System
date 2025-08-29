@@ -10,12 +10,12 @@ import {
     parsePeriodLabel,
     isValidGradeValue,
     getMaxGradeValue
-} from "../../../utils/periodUtils";
+} from "../../../utils";
 import { translatePeriodName } from "../../../utils/periodTranslation";
 import { fetchStudents } from "../../user/actions";
 import { fetchTeacherGrades, createGrade, updateGrade } from "../../grades";
 import { fetchAssignedSubjects } from "../../subjects";
-import { fetchActiveSemester } from "../../semesters";
+
 import { AcademicLevel } from "../../../api/enums";
 import { CreateGradeReqDto, UpdateGradeReqDto } from "../../../api/reponse-dto/grade.res.dto";
 import { useNotification } from "../../../contexts";
@@ -62,7 +62,7 @@ export const Licence2 = () => {
     /** FLOW CORRECT: TOUS les étudiants L2 + leurs notes pour la matière sélectionnée */
     const mergedRows = useMemo((): StudentGradeRow[] => {
         return filteredStudents.map((student) => {
-            const studentId = student.id || student.studentId;
+            const studentId = student.studentId;
             const studentName = student.studentName ||
                 [student.firstName, student.lastName].filter(Boolean).join(" ") ||
                 student.username ||
@@ -110,7 +110,7 @@ export const Licence2 = () => {
     const handleConfirm = async () => {
         try {
             if (!selectedSubject?.id) {
-                notify({ type: "error", message: "Aucune matière disponible" });
+                notify({ type: "error", message: "Warning" , description: "Aucune matière disponible" });
                 return;
             }
 
@@ -154,7 +154,7 @@ export const Licence2 = () => {
                     payloads.push({
                         studentId: row.studentId,
                         subjectId: selectedSubject.id,
-                        semesterId: activeSemester?.id || semester,
+                        semesterId: semester,
                         value,
                         maxValue: getMaxGradeValue(currentPeriodLabel),
                         type: currentPeriodLabel as any,
@@ -166,7 +166,7 @@ export const Licence2 = () => {
             }
 
             if (payloads.length === 0) {
-                notify({ type: "warning", message: "Aucune note valide à enregistrer" });
+                notify({ type: "warning", message: "Warning" , description: "Aucune note valide à enregistrer"  });
                 setIsTableEditable(false);
                 return;
             }
@@ -213,7 +213,6 @@ export const Licence2 = () => {
         dispatch(fetchAssignedSubjects());
         dispatch(fetchTeacherGrades());
         dispatch(fetchStudents());
-        dispatch(fetchActiveSemester());
     }, [dispatch]);
 
     if (teacherSubjectsForLevel.length === 0) {
