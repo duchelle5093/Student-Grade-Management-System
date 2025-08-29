@@ -267,7 +267,7 @@ export const Licence2 = () => {
                     isDataEditable={isTableEditable}
                     setIsDataEditable={setIsTableEditable}
                     onSearch={setSearchValue}
-                    editableColumns={editableColumns}
+                    currentSubjectId={selectedSubject?.id}
                 />
             </div>
         </div>

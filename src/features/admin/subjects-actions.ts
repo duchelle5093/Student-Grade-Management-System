@@ -20,7 +20,11 @@ export const createSubject = createAsyncThunk(
         try {
             return await adminService.createSubject(subjectData);
         } catch (error: any) {
-            return rejectWithValue(error.response?.data?.message || 'Erreur lors de la création');
+            const errorMessage = error.response?.data?.message || 
+                                error.response?.data?.error ||
+                                'Erreur lors de la création de la matière';
+            console.error('Create subject error:', error.response?.data);
+            return rejectWithValue(errorMessage);
         }
     }
 );

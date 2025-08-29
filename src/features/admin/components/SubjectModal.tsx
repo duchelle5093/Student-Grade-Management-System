@@ -35,6 +35,7 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
     const dispatch = useAppDispatch();
     const { loading } = useAppSelector(state => state.admin);
     const { departments = [], teachers = [] } = useAppSelector(state => state.admin || {});
+    const { allSubjects = [] } = useAppSelector(state => state.subjects || {});
     const { notify } = useNotification();
     
     const [form] = Form.useForm();
@@ -62,14 +63,20 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
         try {
             const values = await form.validateFields();
             
+            // Trouver l'ID du département sélectionné
+            const selectedDept = departments.find(d => d.name === values.departmentName);
+            if (!selectedDept) {
+                throw new Error('Département non trouvé');
+            }
+
             const subjectData = {
                 name: values.name,
-                code: values.code,
+                code: values.code.toUpperCase(), // Forcer en majuscules
                 description: values.description,
                 credits: values.credits,
                 level: values.level,
                 cycle: values.cycle,
-                departmentName: values.departmentName,
+                departmentId: selectedDept.id, // Utiliser l'ID du département
                 teacherId: values.teacherId,
                 semesterId: values.semesterId || 1,
                 active: values.active ?? true
@@ -184,7 +191,14 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
                         <Form.Item
                             name="name"
                             label="Nom de la matière"
-                            rules={[{ required: true, message: 'Le nom est requis' }]}
+                            rules={[
+                                { required: true, message: 'Le nom est requis' },
+                                { 
+                                    min: 2, 
+                                    max: 100, 
+                                    message: 'Le nom doit contenir entre 2 et 100 caractères' 
+                                }
+                            ]}
                         >
                             <Input size="large" placeholder="Ex: Programmation Web" />
                         </Form.Item>
@@ -195,10 +209,15 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
                             label="Code"
                             rules={[
                                 { required: true, message: 'Le code est requis' },
+                                { 
+                                    min: 3, 
+                                    max: 20, 
+                                    message: 'Le code doit contenir entre 3 et 20 caractères' 
+                                },
+
                                 {
                                     validator: async (_, value) => {
                                         if (!value) return;
-                                        const { allSubjects } = useAppSelector.getState().subjects;
                                         const existingSubject = allSubjects.find(s => 
                                             s.code.toLowerCase() === value.toLowerCase() && 
                                             (!editingSubject || s.id !== editingSubject.id)
@@ -210,7 +229,15 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
                                 }
                             ]}
                         >
-                            <Input size="large" placeholder="Ex: PROG101" />
+                            <Input 
+                                size="large" 
+                                placeholder="Ex: PROG101" 
+                                style={{ textTransform: 'uppercase' }}
+                                onInput={(e) => {
+                                    const target = e.target as HTMLInputElement;
+                                    target.value = target.value.toUpperCase();
+                                }}
+                            />
                         </Form.Item>
                     </Col>
                 </Row>
@@ -218,10 +245,18 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
                 <Form.Item
                     name="description"
                     label="Description"
+                    rules={[
+                        { 
+                            max: 500, 
+                            message: 'La description ne peut pas dépasser 500 caractères' 
+                        }
+                    ]}
                 >
                     <TextArea 
                         rows={3} 
                         placeholder="Description de la matière..."
+                        showCount
+                        maxLength={500}
                     />
                 </Form.Item>
 
@@ -308,17 +343,34 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
                     </Col>
                 </Row>
 
-                <Form.Item
-                    name="active"
-                    label="Statut"
-                    valuePropName="checked"
-                    initialValue={true}
-                >
-                    <Switch
-                        checkedChildren="Actif"
-                        unCheckedChildren="Inactif"
-                    />
-                </Form.Item>
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <Form.Item
+                            name="semesterId"
+                            label="Semestre"
+                            rules={[{ required: true, message: 'Le semestre est requis' }]}
+                            initialValue={1}
+                        >
+                            <Select size="large" placeholder="Sélectionnez le semestre">
+                                <Option value={1}>Semestre 1</Option>
+                                <Option value={2}>Semestre 2</Option>
+                            </Select>
+                        </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                        <Form.Item
+                            name="active"
+                            label="Statut"
+                            valuePropName="checked"
+                            initialValue={true}
+                        >
+                            <Switch
+                                checkedChildren="Actif"
+                                unCheckedChildren="Inactif"
+                            />
+                        </Form.Item>
+                    </Col>
+                </Row>
             </Form>
         </Modal>
     );

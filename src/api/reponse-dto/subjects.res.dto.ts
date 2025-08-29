@@ -33,13 +33,14 @@ export interface AssignedSubjectResDto {
 export interface CreateSubjectReqDto {
     name: string;
     code: string;
-    description: string;
+    description?: string;
     credits: number;
-    teacherId: number; // Changé en number
-    level: string;
-    cycle: string;
-    semesterId: number; // Changé en number
-    active: boolean;
+    teacherId?: number;
+    departmentId: number; // ID du département (requis)
+    level: string; // LEVEL1, LEVEL2, etc.
+    cycle: string; // BACHELOR, MASTER
+    semesterId: number; // ID du semestre (requis)
+    active?: boolean;
 }
 
 export interface UpdateSubjectReqDto {

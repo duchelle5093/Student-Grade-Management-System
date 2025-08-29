@@ -4,7 +4,7 @@ import { GradesHeader } from "./LicenceHeader";
 import { TeacherGradesTable } from "./TeacherGradesTable";
 
 import { usePageTitle } from "../hooks/usePageTitle";
-import { useFilteredStudents, useActivePeriodPolling } from "../hooks";
+import { useFilteredStudents, useActivePeriodPolling, useClaims } from "../hooks";
 import { 
     formatPeriodLabel, 
     periodLabelToColumnKey, 
@@ -54,6 +54,8 @@ export const GradeManagement = ({ level, levelName, levelCode }: GradeManagement
     const [searchValue, setSearchValue] = useState("");
     const [editedData, setEditedData] = useState<StudentGradeRow[]>([]);
     const [selectedSubject, setSelectedSubject] = useState<{ id: number; name: string; code: string } | null>(null);
+    
+    const { getPendingClaimsCount, getAllPendingClaimsCount } = useClaims(selectedSubject?.id);
 
     usePageTitle(isTableEditable ? `Edition des notes de ${levelName}` : `Notes ${levelName}`);
 
@@ -268,7 +270,7 @@ export const GradeManagement = ({ level, levelName, levelCode }: GradeManagement
                 NC="10"
                 CANT="10"
                 studentCount={filteredStudents.length}
-                claimsCount={0}
+                claimsCount={getAllPendingClaimsCount()}
             />
 
             <div className="mt-8">
@@ -282,6 +284,7 @@ export const GradeManagement = ({ level, levelName, levelCode }: GradeManagement
                     isDataEditable={isTableEditable}
                     setIsDataEditable={setIsTableEditable}
                     onSearch={setSearchValue}
+                    currentSubjectId={selectedSubject?.id}
                 />
             </div>
         </div>

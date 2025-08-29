@@ -21,6 +21,8 @@ interface StudentGradeRow {
     sn2: number | null;
 }
 
+
+
 interface TeacherGradesTableProps {
     isEditable: boolean;
     data: StudentGradeRow[];
@@ -31,6 +33,7 @@ interface TeacherGradesTableProps {
     isDataEditable?: boolean;
     setIsDataEditable: (value: boolean) => void;
     onSearch?: (value: string) => void;
+    currentSubjectId?: number; // Ajout pour filtrer les réclamations
 }
 
 export const TeacherGradesTable = ({
@@ -43,6 +46,7 @@ export const TeacherGradesTable = ({
     setIsDataEditable,
     isDataEditable,
     onSearch,
+    currentSubjectId,
 
 }: TeacherGradesTableProps) => {
     const [editingData, setEditingData] = useState<StudentGradeRow[]>(data);
@@ -55,11 +59,11 @@ export const TeacherGradesTable = ({
     // Polling des colonnes éditables basé sur la période active
     const { editableColumns: pollingEditableColumns } = useActivePeriodPolling({
         enabled: true,
-        interval: 30000 // 30 secondes
+        interval: 60000 // 1 minute - optimisé
     });
     
     // Hook pour gérer les réclamations via API
-    const { getClaimsForStudent, getPendingClaimsCount, refreshClaims } = useClaims();
+    const { getClaimsForStudent, getPendingClaimsCount, refreshClaims } = useClaims(currentSubjectId);
     
 
 
@@ -116,12 +120,18 @@ export const TeacherGradesTable = ({
 
         try {
             await gradeService.processGradeClaim(parseInt(selectedClaim.id), { approve: true });
+            
+            // Refresh multiple stores pour synchronisation complète
+            await Promise.all([
+                refreshClaims(),
+                // Pas besoin de recharger les notes car elles ne changent pas lors de l'approbation
+            ]);
+            
             notify({
                 type: 'success',
                 message: 'Revendication approuvée',
                 description: 'La note a été mise à jour'
             });
-            refreshClaims(); // Actualiser les réclamations
             setIsClaimModalOpen(false);
             setSelectedClaim(null);
         } catch (error) {
@@ -143,7 +153,7 @@ export const TeacherGradesTable = ({
                 message: 'Revendication rejetée',
                 description: 'L\'étudiant a été notifié'
             });
-            refreshClaims(); // Actualiser les réclamations
+            await refreshClaims(); // Actualiser les réclamations
             setIsClaimModalOpen(false);
             setSelectedClaim(null);
             setRejectReason("");
