@@ -11,6 +11,19 @@ import { useNotification } from '../../contexts';
 import { SemesterManagement } from './components/SemesterManagement';
 import dayjs from 'dayjs';
 
+// Hook pour gérer le responsive
+const useResponsive = () => {
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+    
+    return { isMobile };
+};
+
 const { Title, Text } = Typography;
 
 interface AcademicPeriod {
@@ -30,6 +43,7 @@ const AcademicPeriodsManager = () => {
     const dispatch = useAppDispatch();
     const { notify } = useNotification();
     const { loading, gradingWindows } = useAppSelector(state => state.admin);
+    const { isMobile } = useResponsive();
     
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [selectedPeriod, setSelectedPeriod] = useState<AcademicPeriod | null>(null);
@@ -286,16 +300,28 @@ const AcademicPeriodsManager = () => {
     };
 
     return (
-        <div style={{ display: 'flex', height: '100vh', backgroundColor: '#f5f5f5', overflow: 'hidden' }}>
+        <div style={{ 
+            display: 'flex', 
+            flexDirection: isMobile ? 'column' : 'row',
+            height: '100vh', 
+            backgroundColor: '#f5f5f5', 
+            overflow: 'hidden' 
+        }}>
             {/* Section principale */}
-            <div style={{ flex: 1, padding: '24px', backgroundColor: 'white', position: 'relative' }}>
+            <div style={{ 
+                flex: 1, 
+                padding: window.innerWidth < 768 ? '16px' : '24px', 
+                backgroundColor: 'white', 
+                position: 'relative',
+                minHeight: window.innerWidth < 768 ? '60vh' : 'auto'
+            }}>
                 {/* En-tête */}
-                <div style={{ marginBottom: '32px' }}>
-                    <Text type="secondary" style={{ fontSize: '14px' }}>Période en cours</Text>
-                    <Title level={3} style={{ color: '#1890ff', margin: '4px 0' }}>
+                <div style={{ marginBottom: window.innerWidth < 768 ? '16px' : '32px' }}>
+                    <Text type="secondary" style={{ fontSize: window.innerWidth < 768 ? '12px' : '14px' }}>Période en cours</Text>
+                    <Title level={window.innerWidth < 768 ? 4 : 3} style={{ color: '#1890ff', margin: '4px 0' }}>
                         {periods.find(p => p.isActive)?.name || 'Aucune période active'}
                     </Title>
-                    <Text style={{ color: '#666' }}>
+                    <Text style={{ color: '#666', fontSize: window.innerWidth < 768 ? '12px' : '14px' }}>
                         {periods.find(p => p.isActive) ? `${formatDate(periods.find(p => p.isActive)!.startDate)} - ${formatDate(periods.find(p => p.isActive)!.endDate)}` : ''}
                     </Text>
                 </div>
@@ -304,20 +330,21 @@ const AcademicPeriodsManager = () => {
                 <div style={{
                     border: '1px solid #d9d9d9',
                     borderRadius: '6px',
-                    overflow: 'hidden',
+                    overflow: window.innerWidth < 768 ? 'auto' : 'hidden',
                     backgroundColor: 'white',
                     position: 'relative',
+                    minWidth: window.innerWidth < 768 ? '600px' : 'auto'
                 }}>
                     {/* Icône graduation */}
                     <div style={{
                         position: 'absolute',
-                        left: '24px',
-                        top: '24px',
+                        left: window.innerWidth < 768 ? '12px' : '24px',
+                        top: window.innerWidth < 768 ? '12px' : '24px',
                         zIndex: 10
                     }}>
                         <div style={{
-                            width: '64px',
-                            height: '64px',
+                            width: window.innerWidth < 768 ? '48px' : '64px',
+                            height: window.innerWidth < 768 ? '48px' : '64px',
                             backgroundColor: 'white',
                             border: '4px solid #d9d9d9',
                             borderRadius: '50%',
@@ -326,7 +353,7 @@ const AcademicPeriodsManager = () => {
                             justifyContent: 'center',
                             boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                         }}>
-                            <svg width="32" height="32" fill="#fa8c16" viewBox="0 0 24 24">
+                            <svg width={window.innerWidth < 768 ? "24" : "32"} height={window.innerWidth < 768 ? "24" : "32"} fill="#fa8c16" viewBox="0 0 24 24">
                                 <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/>
                             </svg>
                         </div>
@@ -334,15 +361,15 @@ const AcademicPeriodsManager = () => {
 
                     {/* En-têtes des mois */}
                     <div style={{ display: 'flex' }}>
-                        <div style={{ width: '128px' }}></div>
+                        <div style={{ width: window.innerWidth < 768 ? '100px' : '128px' }}></div>
                         {months.map((month) => (
                             <div
                                 key={month.name}
                                 style={{
                                     flex: 1,
                                     textAlign: 'center',
-                                    padding: '16px 0',
-                                    fontSize: '14px',
+                                    padding: window.innerWidth < 768 ? '8px 0' : '16px 0',
+                                    fontSize: window.innerWidth < 768 ? '12px' : '14px',
                                     fontWeight: 500,
                                     color: '#666',
                                     backgroundColor: month.bg,
@@ -356,8 +383,8 @@ const AcademicPeriodsManager = () => {
 
                     {/* Marqueurs de dates */}
                     <div style={{ display: 'flex', borderBottom: '1px solid #f0f0f0' }}>
-                        <div style={{ width: '128px', backgroundColor: '#fafafa' }}></div>
-                        <div style={{ flex: 1, position: 'relative', height: '48px' }}>
+                        <div style={{ width: window.innerWidth < 768 ? '100px' : '128px', backgroundColor: '#fafafa' }}></div>
+                        <div style={{ flex: 1, position: 'relative', height: window.innerWidth < 768 ? '32px' : '48px' }}>
                             {/* Marqueurs dynamiques basés sur les périodes */}
                             {periods.map((period) => [
                                 <div key={`start-${period.id}`} style={{
@@ -365,7 +392,7 @@ const AcademicPeriodsManager = () => {
                                     left: `${calculatePosition(period.startDate)}%`,
                                     top: '50%',
                                     transform: 'translate(-50%, -50%)',
-                                    fontSize: '12px',
+                                    fontSize: window.innerWidth < 768 ? '10px' : '12px',
                                     fontWeight: 'bold'
                                 }}>{new Date(period.startDate).getDate()}</div>,
                                 <div key={`end-${period.id}`} style={{
@@ -373,7 +400,7 @@ const AcademicPeriodsManager = () => {
                                     left: `${calculatePosition(period.endDate)}%`,
                                     top: '50%',
                                     transform: 'translate(-50%, -50%)',
-                                    fontSize: '12px',
+                                    fontSize: window.innerWidth < 768 ? '10px' : '12px',
                                     fontWeight: 'bold'
                                 }}>{new Date(period.endDate).getDate()}</div>
                             ]).flat()}
@@ -382,12 +409,12 @@ const AcademicPeriodsManager = () => {
 
                     {/* Barres des périodes */}
                     {periods.map((period) => (
-                        <div key={period.id} style={{ display: 'flex', height: '130px' }}>
+                        <div key={period.id} style={{ display: 'flex', height: window.innerWidth < 768 ? '80px' : '130px' }}>
                             <div style={{
-                                width: '128px',
-                                padding: '16px 12px',
+                                width: window.innerWidth < 768 ? '100px' : '128px',
+                                padding: window.innerWidth < 768 ? '8px 6px' : '16px 12px',
                                 backgroundColor: '#fafafa',
-                                fontSize: '15px',
+                                fontSize: window.innerWidth < 768 ? '12px' : '15px',
                                 color: '#666',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -400,13 +427,13 @@ const AcademicPeriodsManager = () => {
                                 flex: 1, 
                                 position: 'relative', 
                                 borderBottom: '1px solid #f0f0f0',
-                                backgroundColor: period.isActive ? '#e6f7ff' : 'white'
+                                backgroundColor: 'white'
                             }}>
                                 <div style={{
                                     position: 'absolute',
                                     left: `${calculatePosition(period.startDate)}%`,
                                     width: `${calculateWidth(period.startDate, period.endDate)}%`,
-                                    height: '100px',
+                                    height: window.innerWidth < 768 ? '60px' : '100px',
                                     backgroundColor: period.color,
                                     borderRadius: '4px',
                                     top: '50%',
@@ -420,57 +447,102 @@ const AcademicPeriodsManager = () => {
 
             {/* Sidebar droite */}
             <div style={{
-                width: '300px',
+                width: window.innerWidth < 768 ? '100%' : '300px',
                 backgroundColor: 'white',
-                borderLeft: '1px solid #f0f0f0',
-                padding: '24px'
+                borderLeft: window.innerWidth < 768 ? 'none' : '1px solid #f0f0f0',
+                borderTop: window.innerWidth < 768 ? '1px solid #f0f0f0' : 'none',
+                padding: window.innerWidth < 768 ? '16px' : '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                maxHeight: window.innerWidth < 768 ? '40vh' : 'auto'
             }}>
-                <div style={{ marginBottom: '16px' }}>
+                <div style={{ 
+                    position: 'sticky', 
+                    top: 0, 
+                    zIndex: 10, 
+                    backgroundColor: 'white', 
+                    paddingBottom: '16px',
+                    borderBottom: '1px solid #f0f0f0',
+                    marginBottom: '16px'
+                }}>
                     <AppButton
                         btnType={'submit'}
                         icon={<EditOutlined />}
                         onClick={() => setIsSemesterModalVisible(true)}
+                        style={{ width: '100%' }}
                     >
                         Gérer les semestres
                     </AppButton>
                 </div>
-                
-                {periods.map((period) => (
-                    <div 
-                        key={period.id} 
-                        onClick={() => handlePeriodClick(period)}
-                        style={{
-                            padding: '12px 0',
-                            borderBottom: '1px solid #f0f0f0',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            cursor: 'pointer',
-                            transition: 'background-color 0.2s',
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#f5f5f5';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                        }}
-                    >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{
-                                width: '12px',
-                                height: '12px',
-                                backgroundColor: period.color,
-                                borderRadius: '2px'
-                            }}></div>
-                            <div style={{ fontWeight: 500, fontSize: '14px' }}>
-                                {period.shortName}
+                <div style={{ 
+                    flex: 1, 
+                    overflowY: 'auto',
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#bfbfbf #ffffff'
+                }}>
+                    {periods.map((period) => (
+                        <div 
+                            key={period.id} 
+                            onClick={() => handlePeriodClick(period)}
+                            style={{
+                                padding: window.innerWidth < 768 ? '8px 12px' : '12px 16px',
+                                borderBottom: '1px solid #f0f0f0',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                borderRadius: '8px',
+                                margin: window.innerWidth < 768 ? '2px 0' : '4px 0',
+                                backgroundColor: period.isActive ? 'rgba(110, 173, 255, 0.1)' : 'transparent',
+                                border: period.isActive ? '1px solid rgba(110, 173, 255, 0.3)' : '1px solid transparent'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = period.isActive ? 'rgba(110, 173, 255, 0.2)' : '#f5f5f5';
+                                e.currentTarget.style.transform = 'translateX(4px)';
+                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = period.isActive ? 'rgba(110, 173, 255, 0.1)' : 'transparent';
+                                e.currentTarget.style.transform = 'translateX(0)';
+                                e.currentTarget.style.boxShadow = 'none';
+                            }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: window.innerWidth < 768 ? '8px' : '12px' }}>
+                                <div style={{
+                                    width: window.innerWidth < 768 ? '12px' : '16px',
+                                    height: window.innerWidth < 768 ? '12px' : '16px',
+                                    backgroundColor: period.color,
+                                    borderRadius: '4px',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                                }}></div>
+                                <div>
+                                    <div style={{ fontWeight: 600, fontSize: window.innerWidth < 768 ? '12px' : '14px', marginBottom: '2px' }}>
+                                        {period.shortName}
+                                        {period.isActive && (
+                                            <span style={{ 
+                                                marginLeft: '8px', 
+                                                fontSize: '10px', 
+                                                backgroundColor: '#52c41a', 
+                                                color: 'white', 
+                                                padding: '2px 6px', 
+                                                borderRadius: '10px',
+                                                fontWeight: 'bold'
+                                            }}>ACTIF</span>
+                                        )}
+                                    </div>
+                                    <div style={{ fontSize: window.innerWidth < 768 ? '10px' : '11px', color: '#999' }}>
+                                        {period.name}
+                                    </div>
+                                </div>
+                            </div>
+                            <div style={{ textAlign: 'right', fontSize: window.innerWidth < 768 ? '9px' : '11px', color: '#666' }}>
+                                <div>{formatDate(period.startDate)}</div>
+                                <div>{formatDate(period.endDate)}</div>
                             </div>
                         </div>
-                        <div style={{ textAlign: 'right', fontSize: '12px', color: '#666' }}>
-                            {formatDate(period.startDate)} - {formatDate(period.endDate)}
-                        </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
 
             {/* Modal d'édition */}

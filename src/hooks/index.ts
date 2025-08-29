@@ -1,6 +1,7 @@
-export * from './useServerNotificationHandler.ts'
-export * from './useActivePeriodPolling.ts'
-export * from './useNavigation.ts'
-export * from './useTeacherLevels.ts'
-export * from './useFilteredStudents.ts'
-export * from './useTeacherStats.ts'
+export { useServerNotificationHandler } from './useServerNotificationHandler.ts';
+export { useActivePeriodPolling } from './useActivePeriodPolling.ts';
+export { useAppNavigation } from './useNavigation.ts';
+export { useTeacherLevels } from './useTeacherLevels.ts';
+export { useFilteredStudents } from './useFilteredStudents.ts';
+export { useRecentGrades, useStudentsByLevel, useGradeProgression, useRecentActivity } from './useTeacherStats.ts';
+export { useClaims } from './useClaims.ts';

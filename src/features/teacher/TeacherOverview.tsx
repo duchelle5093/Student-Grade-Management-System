@@ -42,18 +42,14 @@ export const TeacherOverview = () => {
     const gradeProgression = useGradeProgression();
     const recentActivity = useRecentActivity();
     
-    // Refresh périodique des données (toutes les 30s)
+    // Chargement initial des données
     useEffect(() => {
-        const interval = setInterval(() => {
-            dispatch(fetchTeacherGrades());
-            dispatch(fetchStudents());
-        }, 30000);
-        
-        return () => clearInterval(interval);
+        dispatch(fetchTeacherGrades());
+        dispatch(fetchStudents());
     }, [dispatch]);
 
     return (
-        <div style={{ padding: '24px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+        <div className="w-full h-full bg-gray-50 p-6">
             <div style={{ marginBottom: '24px' }}>
                 <Title level={2} style={{ margin: 0, color: '#262626' }}>
                     Tableau de bord Enseignant

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../../store";
 import { GradesHeader } from "../../../components/LicenceHeader";
 import { TeacherGradesTable } from "../../../components";
-import { mockClaimsData } from "../../teacher/mockClaimsData";
+
 import { usePageTitle } from "../../../hooks/usePageTitle";
 import { useFilteredStudents, useActivePeriodPolling } from "../../../hooks";
 import { 
@@ -233,16 +233,13 @@ export const Licence3 = () => {
                 NC="10"
                 CANT="10"
                 studentCount={filteredStudents.length}
-                claimsCount={mockClaimsData.studentsWithClaims.reduce((total, student) => 
-                    total + (student.grades?.flatMap(g => g.claims || []).filter(c => c.status === 'PENDING').length || 0), 0
-                )}
-                studentCount={filteredStudents.length}
+                claimsCount={0}
             />
 
             <div className="mt-8">
                 <TeacherGradesTable
                     data={displayRows}
-                    studentsWithClaims={mockClaimsData.studentsWithClaims}
+                    studentsWithClaims={[]}
                     isEditable={isTableEditable}
                     onGradesChange={setEditedData}
                     onEdit={handleEdit}

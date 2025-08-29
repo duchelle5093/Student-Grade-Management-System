@@ -41,42 +41,8 @@ export default function Reclamations({
       // Sauvegarder les valeurs du formulaire
       setFormValues(values);
       
-      // Mapper le type de réclamation vers periodLabel
-      const periodLabel = values.period === 'CC' 
-        ? (currentTopic?.semester === 'S1' ? 'CC_1' : 'CC_2')
-        : (currentTopic?.semester === 'S1' ? 'SN_1' : 'SN_2');
-
-      const grade = student?.grades.find(
-        grade => grade.subjectCode === currentTopic?.code &&
-                 grade.periodLabel === periodLabel
-      );
-
-      if (!grade) {
-        notify({
-          type: 'error',
-          message: 'Erreur',
-          description: 'Note non trouvée pour cette matière et période'
-        });
-        return;
-      }
-
-      const payload: GradeClaimReqDto = {
-        gradeId: grade.id,
-        requestedScore: parseFloat(values.requestedScore),
-        cause: values.cause,
-        period: values.period,
-        description: values.description
-      };
-      
-      try {
-        const result = await dispatch(submitGradeClaim(payload));
-        if (submitGradeClaim.fulfilled.match(result)) {
-          handleNext?.();
-        }
-      } catch (error) {
-        // L'erreur sera affichée automatiquement par le système
-        console.error('Erreur soumission réclamation:', error);
-      }
+      // Passer à l'étape suivante pour afficher le récapitulatif
+      handleNext?.();
     };
 
     return (
@@ -108,8 +74,10 @@ export default function Reclamations({
               placeholder="Sélectionnez le type de note"
               size="large"
               options={[
-                { value: "CC", label: "CC" },
-                { value: "SN", label: "SN" },
+                { value: "CC_1", label: "CC Semestre 1" },
+                { value: "CC_2", label: "CC Semestre 2" },
+                { value: "SN_1", label: "SN Semestre 1" },
+                { value: "SN_2", label: "SN Semestre 2" },
               ]}
             />
           </Form.Item>  
@@ -219,7 +187,7 @@ export default function Reclamations({
   ];
 
   return (
-    <div className=" mt-10 h-[550px]">
+    <div>
       <StepperProvider>
         <Stepper stepItems={stepItems} horizontal>
           {(currentStepIndex) => (

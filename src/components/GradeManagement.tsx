@@ -1,74 +1,78 @@
 import { useEffect, useMemo, useState } from "react";
-import { useAppDispatch, useAppSelector } from "../../../store";
-import { GradesHeader } from "../../../components/LicenceHeader";
-import { TeacherGradesTable } from "../../../components";
-import { usePageTitle } from "../../../hooks/usePageTitle";
-import { useFilteredStudents, useActivePeriodPolling } from "../../../hooks";
-import {
-    formatPeriodLabel,
-    periodLabelToColumnKey,
-    parsePeriodLabel,
+import { useAppDispatch, useAppSelector } from "../store";
+import { GradesHeader } from "./LicenceHeader";
+import { TeacherGradesTable } from "./TeacherGradesTable";
+
+import { usePageTitle } from "../hooks/usePageTitle";
+import { useFilteredStudents, useActivePeriodPolling } from "../hooks";
+import { 
+    formatPeriodLabel, 
+    periodLabelToColumnKey, 
+    parsePeriodLabel, 
     isValidGradeValue,
-    getMaxGradeValue
-} from "../../../utils/periodUtils";
-import { translatePeriodName } from "../../../utils/periodTranslation";
-import { fetchStudents } from "../../user/actions";
-import { fetchTeacherGrades, createGrade, updateGrade } from "../../grades";
-import { fetchAssignedSubjects } from "../../subjects";
-import { fetchActiveSemester } from "../../semesters";
-import { AcademicLevel } from "../../../api/enums";
-import { CreateGradeReqDto, UpdateGradeReqDto } from "../../../api/reponse-dto/grade.res.dto";
-import { useNotification } from "../../../contexts";
+    getMaxGradeValue 
+} from "../utils/periodUtils";
+import { translatePeriodName } from "../utils/periodTranslation";
+import { fetchStudents } from "../features/user/actions";
+import { fetchTeacherGrades, createGrade, updateGrade } from "../features/grades";
+import { fetchAssignedSubjects } from "../features/subjects";
+import { fetchActiveSemester } from "../features/semesters";
+import { AcademicLevel } from "../api/enums";
+import { CreateGradeReqDto, UpdateGradeReqDto } from "../api/reponse-dto/grade.res.dto";
+import { useNotification } from "../contexts";
 
+interface StudentGradeRow {
+    studentId: number;
+    studentName: string;
+    cc1: number | null;
+    sn1: number | null;
+    cc2: number | null;
+    sn2: number | null;
+}
 
+interface GradeManagementProps {
+    level: AcademicLevel;
+    levelName: string;
+    levelCode: string;
+}
 
-export const Licence2 = () => {
+export const GradeManagement = ({ level, levelName, levelCode }: GradeManagementProps) => {
     const dispatch = useAppDispatch();
     const { notify } = useNotification();
     const { activeSemester } = useAppSelector((s) => s.semesters);
     const { teacherGrades } = useAppSelector((s) => s.grades);
     const user = useAppSelector((s) => s.user.profile);
 
-    const { activePeriod, editableColumns } = useActivePeriodPolling({ enabled: true, interval: 10000 });
+    const { activePeriod, editableColumns } = useActivePeriodPolling({ enabled: true, interval: 60000 }); // 1 minute au lieu de 10s
     const currentPeriodLabel = activePeriod?.shortName || "CC_1";
     const formattedPeriod = translatePeriodName(activePeriod?.name) || formatPeriodLabel(currentPeriodLabel);
     const { filteredStudents, teacherSubjectsForLevel } = useFilteredStudents({
-        currentLevel: AcademicLevel.LEVEL2,
+        currentLevel: level,
     });
-
-    interface StudentGradeRow {
-        studentId: number;
-        studentName: string;
-        cc1: number | null;
-        sn1: number | null;
-        cc2: number | null;
-        sn2: number | null;
-    }
 
     const [isTableEditable, setIsTableEditable] = useState(false);
     const [searchValue, setSearchValue] = useState("");
     const [editedData, setEditedData] = useState<StudentGradeRow[]>([]);
     const [selectedSubject, setSelectedSubject] = useState<{ id: number; name: string; code: string } | null>(null);
 
-    usePageTitle(isTableEditable ? "Edition des notes de Licence 2" : "Notes Licence 2");
+    usePageTitle(isTableEditable ? `Edition des notes de ${levelName}` : `Notes ${levelName}`);
 
-    // matière par défaut
     useEffect(() => {
         if (!selectedSubject && teacherSubjectsForLevel.length > 0) {
             setSelectedSubject(teacherSubjectsForLevel[0]);
         }
     }, [teacherSubjectsForLevel, selectedSubject]);
 
-    /** FLOW CORRECT: TOUS les étudiants L2 + leurs notes pour la matière sélectionnée */
     const mergedRows = useMemo((): StudentGradeRow[] => {
+        if (!filteredStudents?.length) return [];
+        
         return filteredStudents.map((student) => {
-            const studentId = student.id || student.studentId;
-            const studentName = student.studentName ||
-                [student.firstName, student.lastName].filter(Boolean).join(" ") ||
+            const studentId = student.id;
+            const studentName = [student.firstName, student.lastName].filter(Boolean).join(" ") ||
                 student.username ||
                 `Étudiant ${studentId}`;
 
-            const studentGrades = teacherGrades.filter((grade) => 
+            const studentGrades = (teacherGrades || []).filter((grade) => 
                 grade.studentId === studentId && 
                 grade.subjectId === selectedSubject?.id
             );
@@ -76,11 +80,21 @@ export const Licence2 = () => {
             const gradeMap: Record<string, number | null> = {
                 cc1: null, sn1: null, cc2: null, sn2: null,
             };
-
+            
             studentGrades.forEach((grade) => {
-                const columnKey = periodLabelToColumnKey(grade.periodLabel);
-                if (columnKey && columnKey in gradeMap) {
-                    gradeMap[columnKey] = grade.value;
+                switch (grade.type) {
+                    case 'CC_1':
+                        gradeMap.cc1 = grade.value;
+                        break;
+                    case 'CC_2':
+                        gradeMap.cc2 = grade.value;
+                        break;
+                    case 'SN_1':
+                        gradeMap.sn1 = grade.value;
+                        break;
+                    case 'SN_2':
+                        gradeMap.sn2 = grade.value;
+                        break;
                 }
             });
 
@@ -96,21 +110,21 @@ export const Licence2 = () => {
     }, [filteredStudents, teacherGrades, selectedSubject?.id]);
 
     const displayRows = useMemo(() => {
-        if (!searchValue.trim()) return mergedRows;
-        return mergedRows.filter((r) =>
-            r.studentName.toLowerCase().includes(searchValue.toLowerCase())
+        if (!searchValue?.trim()) return mergedRows || [];
+        return (mergedRows || []).filter((r) =>
+            r.studentName?.toLowerCase().includes(searchValue.toLowerCase())
         );
     }, [mergedRows, searchValue]);
 
     const handleEdit = () => {
-        setEditedData(displayRows);
+        setEditedData(displayRows || []);
         setIsTableEditable(true);
     };
 
     const handleConfirm = async () => {
         try {
             if (!selectedSubject?.id) {
-                notify({ type: "error", message: "Aucune matière disponible" });
+                notify({ type: "error", message: "Erreur", description: "Aucune matière disponible" });
                 return;
             }
 
@@ -128,13 +142,13 @@ export const Licence2 = () => {
             
             const payloads: Array<CreateGradeReqDto | { gradeId: number; gradeData: UpdateGradeReqDto }> = [];
 
-            for (const row of editedData) {
+            for (const row of (editedData || [])) {
                 const gradeValue = row[columnKey as keyof StudentGradeRow];
-
+                
                 if (!isValidGradeValue(gradeValue, currentPeriodLabel)) continue;
-
+                
                 const value = Number(gradeValue);
-                const existing = teacherGrades.find(grade => 
+                const existing = (teacherGrades || []).find(grade => 
                     grade.studentId === row.studentId && 
                     grade.subjectId === selectedSubject.id &&
                     (grade.type === currentPeriodLabel || grade.periodLabel === currentPeriodLabel)
@@ -166,7 +180,7 @@ export const Licence2 = () => {
             }
 
             if (payloads.length === 0) {
-                notify({ type: "warning", message: "Aucune note valide à enregistrer" });
+                notify({ type: "warning", message: "Attention", description: "Aucune note valide à enregistrer" });
                 setIsTableEditable(false);
                 return;
             }
@@ -220,7 +234,7 @@ export const Licence2 = () => {
         return (
             <div className="text-center py-8">
                 <h2 className="text-xl font-semibold text-gray-600 mb-4">
-                    Aucune matière assignée pour le niveau Licence 2
+                    Aucune matière assignée pour le niveau {levelName}
                 </h2>
                 <p className="text-gray-500">
                     Vous n'avez pas de matières assignées pour ce niveau.
@@ -230,11 +244,11 @@ export const Licence2 = () => {
         );
     }
 
-    if (filteredStudents.length === 0) {
+    if (!filteredStudents || filteredStudents.length === 0) {
         return (
             <div className="text-center py-8">
                 <h2 className="text-xl font-semibold text-gray-600 mb-4">
-                    Aucun étudiant trouvé en Licence 2
+                    Aucun étudiant trouvé en {levelName}
                 </h2>
                 <p className="text-gray-500">
                     Il n'y a aucun étudiant inscrit dans cette classe pour la matière sélectionnée.
@@ -246,11 +260,11 @@ export const Licence2 = () => {
     return (
         <div>
             <GradesHeader
-                title="L2"
+                title={levelCode}
                 period={formattedPeriod}
                 topic={selectedSubject?.name || "Matière"}
                 code={selectedSubject?.code || "CODE"}
-                level="Licence 2"
+                level={levelName}
                 NC="10"
                 CANT="10"
                 studentCount={filteredStudents.length}
@@ -259,7 +273,7 @@ export const Licence2 = () => {
 
             <div className="mt-8">
                 <TeacherGradesTable
-                    data={displayRows}
+                    data={displayRows || []}
                     studentsWithClaims={[]}
                     isEditable={isTableEditable}
                     onGradesChange={setEditedData}
@@ -268,7 +282,6 @@ export const Licence2 = () => {
                     isDataEditable={isTableEditable}
                     setIsDataEditable={setIsTableEditable}
                     onSearch={setSearchValue}
-                    editableColumns={editableColumns}
                 />
             </div>
         </div>

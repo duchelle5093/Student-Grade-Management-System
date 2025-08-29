@@ -6,6 +6,7 @@ import {
     UpdateGradeReqDto,
 } from '../../api/reponse-dto/grade.res.dto';
 import {GradeClaimReqDto} from "../../api/request-dto/gradeClaim.req.dto.ts";
+import {GradeClaimResDto} from "../../api/reponse-dto/gradeClaim.res.dto.ts";
 
 export const fetchTeacherGrades = createAsyncThunk(
     'grades/fetchTeacherGrades',
@@ -80,22 +81,17 @@ export const publishGrades = createAsyncThunk(
 );
 
 
-export const approveGradeClaim = createAsyncThunk('grade-claims/approve' , async (claimId: number) => {
-    const response = await gradeService.approveGradeClaim(claimId);
-    return response
+export const processGradeClaim = createAsyncThunk('grade-claims/process', async ({ claimId, decision }: { claimId: number; decision: { approve: boolean; comment?: string } }) => {
+    const response = await gradeService.processGradeClaim(claimId, decision);
+    return response;
 })
 
-export const rejecGradeClaim = createAsyncThunk('grade-claims/reject' , async ({ claimId, reason }: { claimId: number; reason: string }) => {
-    const response = await gradeService.rejectGradeClaim(claimId , reason);
-    return response
-})
-
-export const submitGradeClaim = createAsyncThunk('grade-claims/submit' , async (claimData: GradeClaimReqDto) => {
+export const submitGradeClaim = createAsyncThunk('grade-claims/submit' , async (claimData: GradeClaimReqDto): Promise<GradeClaimResDto> => {
     const response = await gradeService.submitGradeClaim(claimData);
     return response
 })
 
-export const listGradeClaims = createAsyncThunk('grade-claims/list' , async () => {
+export const listGradeClaims = createAsyncThunk('grade-claims/list' , async (): Promise<GradeClaimResDto[]> => {
     const response = await gradeService.listGradeClaims();
     return response
 })

@@ -78,21 +78,23 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
                     username: editingUser.username || '',
                     email: editingUser.email || '',
                     // Champs spécifiques aux étudiants
-                    matricule: editingUser.matricule || '',
+                    matricule: editingUser.matricule || editingUser.username || '',
                     level: editingUser.level || '',
-                    speciality: editingUser.speciality || '',
-                    cycle: editingUser.cycle || '',
+                    speciality: editingUser.speciality || (editingUser.subjects && editingUser.subjects[0] ? editingUser.subjects[0].departmentName : ''),
+                    cycle: editingUser.cycle || (editingUser.level && (editingUser.level.includes('LEVEL1') || editingUser.level.includes('LEVEL2') || editingUser.level.includes('LEVEL3')) ? 'BACHELOR' : 'MASTER'),
                     // Champs spécifiques aux enseignants
-                    levels: editingUser.levels || [],
-                    department: editingUser.department || '',
+                    levels: editingUser.levels || (editingUser.subjects ? editingUser.subjects.map(s => s.level).filter((v, i, a) => a.indexOf(v) === i) : []),
+                    department: editingUser.department || (editingUser.subjects && editingUser.subjects[0] ? editingUser.subjects[0].departmentName : ''),
                     phone: editingUser.phone || '',
                 };
                 form.setFieldsValue(formData);
+                setFormData(formData);
             }, 100);
         } else if (!editingUser && visible) {
             form.resetFields();
             setSelectedRole(Role.STUDENT);
             setCurrentStep(0);
+            setFormData({});
         }
     }, [editingUser, visible, form]);
 
@@ -330,6 +332,11 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
                                     size="large" 
                                     prefix={<IdcardOutlined />}
                                     placeholder="Entrez le matricule"
+                                    readOnly={!!editingUser}
+                                    style={{
+                                        backgroundColor: editingUser ? '#f5f5f5' : 'white',
+                                        cursor: editingUser ? 'not-allowed' : 'text'
+                                    }}
                                 />
                             </Form.Item>
                         )}

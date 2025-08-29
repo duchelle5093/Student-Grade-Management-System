@@ -84,13 +84,8 @@ export class GradeService {
         return response.data;
     }
 
-    async approveGradeClaim(gradeClaimId: number): Promise<any> {
-        const response = await this._client.put(`${gradeApis.APPROVE_GRADE_CLAIM}/${gradeClaimId}`);
-        return response.data;
-    }
-
-    async rejectGradeClaim(gradeClaimId: number , reason : string): Promise<void> {
-        const response = await this._client.put(`${gradeApis.REJECT_GRADE_CLAIM}/${gradeClaimId}`, reason);
+    async processGradeClaim(gradeClaimId: number, decision: { approve: boolean; comment?: string }): Promise<any> {
+        const response = await this._client.put(`${gradeApis.APPROVE_GRADE_CLAIM}/${gradeClaimId}`, decision);
         return response.data;
     }
 

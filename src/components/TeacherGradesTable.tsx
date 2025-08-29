@@ -1,16 +1,14 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Table, Input, Button, Tag, Modal, Badge } from "antd";
 import { MagnifyingGlassCircleIcon } from "@heroicons/react/24/solid";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { GradesEdition } from "./GradesEditionBtn";
 import { EditPvButton } from "./EditPvButton";
 import { ReclamationsDetails } from "../features/reclamations";
-
 import { StudentWithClaims, ClaimData } from "../features/teacher/mockClaimsData";
-import { useAppDispatch } from "../store";
 import { gradeService } from "../api/configs";
 import { useNotification } from "../contexts";
-import { useActivePeriodPolling } from "../hooks/useActivePeriodPolling";
+import { useActivePeriodPolling, useClaims } from "../hooks";
 import { getMaxGradeValue } from "../utils/periodUtils";
 
 // Interface pour les données d'affichage du tableau
@@ -50,7 +48,7 @@ export const TeacherGradesTable = ({
     const [editingData, setEditingData] = useState<StudentGradeRow[]>(data);
     const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
     const [selectedClaim, setSelectedClaim] = useState<ClaimData | null>(null);
-    const [selectedStudent, setSelectedStudent] = useState<StudentWithClaims | null>(null);
+    const [selectedStudent] = useState<StudentWithClaims | null>(null);
     const [rejectReason, setRejectReason] = useState("");
     const { notify } = useNotification();
     
@@ -59,6 +57,11 @@ export const TeacherGradesTable = ({
         enabled: true,
         interval: 30000 // 30 secondes
     });
+    
+    // Hook pour gérer les réclamations via API
+    const { getClaimsForStudent, getPendingClaimsCount, refreshClaims } = useClaims();
+    
+
 
     useEffect(() => {
         setEditingData(data);
@@ -67,14 +70,9 @@ export const TeacherGradesTable = ({
 
 
     // Vérifier si un étudiant a une revendication pour une période donnée
-    const getClaimForStudent = (studentId: number, period: "cc1" | "sn1" | "cc2" | "sn2"): ClaimData | null => {
-        const student = studentsWithClaims.find(s => s.id === studentId);
-        if (!student) return null;
-
-        const periodType = period.startsWith('cc') ? 'CC' : 'SN';
-        return student.grades
-            ?.flatMap(g => g.claims || [])
-            ?.find(c => c.period === periodType && c.status === 'PENDING') || null;
+    const getClaimForStudentPeriod = (studentId: number, period: "cc1" | "sn1" | "cc2" | "sn2"): boolean => {
+        const claims = getClaimsForStudent(studentId, period);
+        return claims.length > 0;
     };
 
     const getStudentGrade = (studentId: number, field: "cc1" | "sn1" | "cc2" | "sn2") => {
@@ -100,12 +98,10 @@ export const TeacherGradesTable = ({
     };
 
     const handleClaimClick = (studentId: number, period: "cc1" | "sn1" | "cc2" | "sn2") => {
-        const student = studentsWithClaims.find(s => s.id === studentId);
-        const claim = getClaimForStudent(studentId, period);
+        const claims = getClaimsForStudent(studentId, period);
         
-        if (student && claim) {
-            setSelectedStudent(student);
-            setSelectedClaim(claim);
+        if (claims.length > 0) {
+            setSelectedClaim(claims[0]); // Prendre la première réclamation
             setIsClaimModalOpen(true);
         }
     };
@@ -114,12 +110,13 @@ export const TeacherGradesTable = ({
         if (!selectedClaim) return;
 
         try {
-            await gradeService.approveGradeClaim(parseInt(selectedClaim.id));
+            await gradeService.processGradeClaim(parseInt(selectedClaim.id), { approve: true });
             notify({
                 type: 'success',
                 message: 'Revendication approuvée',
                 description: 'La note a été mise à jour'
             });
+            refreshClaims(); // Actualiser les réclamations
             setIsClaimModalOpen(false);
             setSelectedClaim(null);
             setSelectedStudent(null);
@@ -136,12 +133,13 @@ export const TeacherGradesTable = ({
         if (!selectedClaim || !rejectReason.trim()) return;
 
         try {
-            await gradeService.rejectGradeClaim(parseInt(selectedClaim.id), rejectReason);
+            await gradeService.processGradeClaim(parseInt(selectedClaim.id), { approve: false, comment: rejectReason });
             notify({
                 type: 'success',
                 message: 'Revendication rejetée',
                 description: 'L\'étudiant a été notifié'
             });
+            refreshClaims(); // Actualiser les réclamations
             setIsClaimModalOpen(false);
             setSelectedClaim(null);
             setSelectedStudent(null);
@@ -254,9 +252,7 @@ export const TeacherGradesTable = ({
 
     const attributedGrades = studentsWithGrades.size;
     const totalStudents = data.length;
-    const totalPendingClaims = studentsWithClaims.reduce((acc, student) => 
-        acc + (student.grades?.flatMap(g => g.claims || []).filter(c => c.status === 'PENDING').length || 0), 0
-    );
+    const totalPendingClaims = getPendingClaimsCount();
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         onSearch?.(e.target.value);

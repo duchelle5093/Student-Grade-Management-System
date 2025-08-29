@@ -299,6 +299,8 @@ export default function GradesTable({ student }: GradesTableProps) {
         open={isModalVisible}
         onCancel={handleCancel}
         footer={null}
+        width={700}
+        centered
       >
         {currentTopic && !claimedTopics.has(currentTopic.code) ? (
             <Reclamations

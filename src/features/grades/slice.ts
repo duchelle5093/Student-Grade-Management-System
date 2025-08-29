@@ -8,19 +8,25 @@ import {
     fetchGradeSheet,
     exportGrades,
     publishGrades,
-    fetchActivePeriod
+    fetchActivePeriod,
+    submitGradeClaim,
+    processGradeClaim,
+    listGradeClaims
 } from './actions';
 import { StudentGradeResDto} from "../../api/reponse-dto/student.res.dto.ts";
+import { GradeClaimResDto } from "../../api/reponse-dto/gradeClaim.res.dto.ts";
 
 interface GradesState {
     teacherGrades: TeacherGradeResDto[];
     studentGrades: StudentGradeResDto[];
     gradeSheet: any;
     activePeriod: any;
+    claims: GradeClaimResDto[];
     loading: boolean;
     error: string | null;
     exportLoading: boolean;
     publishLoading: boolean;
+    claimsLoading: boolean;
 }
 
 const initialState: GradesState = {
@@ -28,10 +34,12 @@ const initialState: GradesState = {
     studentGrades: [],
     gradeSheet: null,
     activePeriod: null,
+    claims: [],
     loading: false,
     error: null,
     exportLoading: false,
     publishLoading: false,
+    claimsLoading: false,
 };
 
 const gradesSlice = createSlice({
@@ -124,6 +132,33 @@ const gradesSlice = createSlice({
             .addCase(fetchActivePeriod.fulfilled, (state, action) => {
                 // L'API retourne un tableau, prendre le premier élément
                 state.activePeriod = Array.isArray(action.payload) ? action.payload[0] : action.payload;
+            })
+            // Claims management
+            .addCase(listGradeClaims.pending, (state) => {
+                state.claimsLoading = true;
+            })
+            .addCase(listGradeClaims.fulfilled, (state, action) => {
+                state.claimsLoading = false;
+                state.claims = action.payload;
+            })
+            .addCase(listGradeClaims.rejected, (state, action) => {
+                state.claimsLoading = false;
+                state.error = action.error.message || 'Failed to fetch claims';
+            })
+            .addCase(submitGradeClaim.fulfilled, (state, action) => {
+                // Ajouter la nouvelle réclamation à la liste
+                state.claims.push(action.payload);
+            })
+            .addCase(processGradeClaim.fulfilled, (state, action) => {
+                // Mettre à jour le statut de la réclamation
+                const claimIndex = state.claims.findIndex(claim => claim.id === action.meta.arg.claimId);
+                if (claimIndex !== -1) {
+                    const newStatus = action.meta.arg.decision.approve ? 'APPROVED' : 'REJECTED';
+                    state.claims[claimIndex].status = newStatus;
+                    if (action.meta.arg.decision.comment) {
+                        state.claims[claimIndex].teacherComment = action.meta.arg.decision.comment;
+                    }
+                }
             });
     },
 });

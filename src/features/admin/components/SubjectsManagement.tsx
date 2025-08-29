@@ -248,62 +248,82 @@ export const SubjectsManagement = () => {
                             </Space>
                         }
                         headStyle={{ backgroundColor: '#6EADFF', borderBottom: 'none' }}
-                        style={{ height: '100%' }}
+                        style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
                         bodyStyle={{ 
                             height: 'calc(100% - 57px)', 
-                            overflowY: 'auto',
-                            scrollbarWidth: 'thin',
-                            scrollbarColor: '#bfbfbf #ffffff'
+                            padding: 0,
+                            display: 'flex',
+                            flexDirection: 'column'
                         }}
                     >
-                        <Button
-                            type="primary"
-                            icon={<PlusOutlined />}
-                            onClick={() => setIsDepartmentModalVisible(true)}
-                            style={{ 
-                                width: '100%', 
-                                marginBottom: '16px',
-                                backgroundColor: '#6EADFF', 
-                                borderColor: '#6EADFF' 
-                            }}
-                        >
-                            Gestion des départements
-                        </Button>
-                        <Space direction="vertical" style={{ width: '100%' }}>
-                            {departments.map(dept => 
-                                <Button
-                                    key={dept.id}
-                                    type="default"
-                                    block
-                                    onClick={() => setSelectedDepartment(dept.id)}
-                                    style={{ 
-                                        textAlign: 'left', 
-                                        height: '55px',
-                                        padding: '12px',
-                                        backgroundColor: selectedDepartment === dept.id ? 'rgba(110, 173, 255, 0.4)' : '#fafafa',
-                                        borderColor: selectedDepartment === dept.id ? 'rgba(110, 173, 255, 0.5)' : '#e8e8e8',
-                                        color: selectedDepartment === dept.id ? 'white' : 'rgba(0, 0, 0, 0.88)',
-                                        marginBottom: '8px',
-                                        transition: 'all 0.2s ease',
-                                        fontWeight: selectedDepartment === dept.id ? 'bold' : 'normal'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        if (selectedDepartment !== dept.id) {
-                                            e.currentTarget.style.backgroundColor = '#f0f0f0';
-                                            e.currentTarget.style.transform = 'translateX(4px)';
-                                        }
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        if (selectedDepartment !== dept.id) {
-                                            e.currentTarget.style.backgroundColor = '#fafafa';
-                                            e.currentTarget.style.transform = 'translateX(0)';
-                                        }
-                                    }}
-                                >
-                                    {dept.name}
-                                </Button>
-                            )}
-                        </Space>
+                        <div style={{ 
+                            position: 'sticky', 
+                            top: 0, 
+                            zIndex: 10, 
+                            backgroundColor: 'white', 
+                            padding: '16px 16px 0 16px',
+                            borderBottom: '1px solid #f0f0f0'
+                        }}>
+                            <Button
+                                type="primary"
+                                icon={<PlusOutlined />}
+                                onClick={() => setIsDepartmentModalVisible(true)}
+                                style={{ 
+                                    width: '100%', 
+                                    marginBottom: '16px',
+                                    backgroundColor: '#6EADFF', 
+                                    borderColor: '#6EADFF' 
+                                }}
+                            >
+                                Gestion des départements
+                            </Button>
+                        </div>
+                        <div style={{
+                            flex: 1,
+                            overflowY: 'auto',
+                            padding: '16px',
+                            scrollbarWidth: 'thin',
+                            scrollbarColor: '#bfbfbf #ffffff'
+                        }}>
+                            <Space direction="vertical" style={{ width: '100%' }}>
+                                {[...departments].sort((a, b) => 
+                                    new Date(b.createdDate || b.createdAt || 0).getTime() - 
+                                    new Date(a.createdDate || a.createdAt || 0).getTime()
+                                ).map(dept => 
+                                    <Button
+                                        key={dept.id}
+                                        type="default"
+                                        block
+                                        onClick={() => setSelectedDepartment(dept.id)}
+                                        style={{ 
+                                            textAlign: 'left', 
+                                            height: '55px',
+                                            padding: '12px',
+                                            backgroundColor: selectedDepartment === dept.id ? 'rgba(110, 173, 255, 0.4)' : '#fafafa',
+                                            borderColor: selectedDepartment === dept.id ? 'rgba(110, 173, 255, 0.5)' : '#e8e8e8',
+                                            color: selectedDepartment === dept.id ? 'white' : 'rgba(0, 0, 0, 0.88)',
+                                            marginBottom: '8px',
+                                            transition: 'all 0.2s ease',
+                                            fontWeight: selectedDepartment === dept.id ? 'bold' : 'normal'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (selectedDepartment !== dept.id) {
+                                                e.currentTarget.style.backgroundColor = '#f0f0f0';
+                                                e.currentTarget.style.transform = 'translateX(4px)';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (selectedDepartment !== dept.id) {
+                                                e.currentTarget.style.backgroundColor = '#fafafa';
+                                                e.currentTarget.style.transform = 'translateX(0)';
+                                            }
+                                        }}
+                                    >
+                                        {dept.name}
+                                    </Button>
+                                )}
+                            </Space>
+                        </div>
                     </Card>
                 </Col>
 

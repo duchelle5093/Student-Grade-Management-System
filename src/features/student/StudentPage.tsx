@@ -62,18 +62,37 @@ export default function StudentPage() {
 
     return (
         <div>
-            <div className={'py-5 border-b mb-5'}>
-                <span className={'text-3xl font-bold'}>Liste des notes</span>
-            </div>
-
-            <div className={'w-full flex justify-between my-12'}>
-                <div>
-                    <p>Semestre en cours : <span className="font-semibold text-blue-600">{currentStudentData?.semesterName ? `Semestre ${currentStudentData.semesterName}` : 'Non défini'}</span></p>
-                    <p>Niveau : <span>{currentStudentData?.level || 'Étudiant'}</span></p>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                {/* Titre principal */}
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                        <div className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg font-bold text-2xl">
+                            📊
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-semibold text-gray-800">Mes Notes</h1>
+                            <p className="text-sm text-gray-500">Niveau: {currentStudentData?.level || 'Étudiant'}</p>
+                        </div>
+                    </div>
+                    <div className="text-right">
+                        <div className="text-sm text-gray-500">Semestre actuel</div>
+                        <div className="text-lg font-medium text-blue-600">
+                            {currentStudentData?.semesterName ? `Semestre ${currentStudentData.semesterName}` : 'Non défini'}
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <p>Échec : <span className="text-red-500 font-bold">{failed}</span></p>
-                    <p>Réussite : <span className="text-green-500 font-bold">{passed}</span></p>
+
+                {/* Statistiques */}
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-green-50 rounded-lg p-4 text-center">
+                        <div className="text-2xl font-bold text-green-600">{passed}</div>
+                        <div className="text-sm text-gray-500">Matières réussies</div>
+                    </div>
+                    
+                    <div className="bg-red-50 rounded-lg p-4 text-center">
+                        <div className="text-2xl font-bold text-red-600">{failed}</div>
+                        <div className="text-sm text-gray-500">Matières échouées</div>
+                    </div>
                 </div>
             </div>
 
