@@ -1,4 +1,4 @@
-import { GradeManagement } from "../../../components/GradeManagement";
+import { GradeManagement } from "../../../components";
 import { AcademicLevel } from "../../../api/enums";
 
 export const Licence1 = () => {

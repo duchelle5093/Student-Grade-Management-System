@@ -1,5 +1,5 @@
 import  { useState, useEffect } from 'react';
-import { Button, Modal,Typography, Tabs, DatePicker} from 'antd';
+import { Button, Modal, Typography, Tabs, DatePicker, Switch, Space } from 'antd';
 import { EditOutlined } from '@ant-design/icons';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -7,6 +7,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import { AppButton } from "../../components";
 import { useAppDispatch, useAppSelector } from '../../store';
 import { fetchAllGradingWindows, updateGradingWindow } from './grading-windows-actions';
+import { fetchSemesters } from '../semesters/actions';
 import { useNotification } from '../../contexts';
 import { SemesterManagement } from './components/SemesterManagement';
 import dayjs from 'dayjs';
@@ -43,6 +44,7 @@ const AcademicPeriodsManager = () => {
     const dispatch = useAppDispatch();
     const { notify } = useNotification();
     const { loading, gradingWindows } = useAppSelector(state => state.admin);
+    const { semesters } = useAppSelector(state => state.semesters);
     const { isMobile } = useResponsive();
     
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -51,6 +53,7 @@ const AcademicPeriodsManager = () => {
     const [calendarDate, setCalendarDate] = useState('2020-12-01');
     const [editedStartDate, setEditedStartDate] = useState<string>('');
     const [editedEndDate, setEditedEndDate] = useState<string>('');
+    const [editedIsActive, setEditedIsActive] = useState<boolean>(false);
     const [isSemesterModalVisible, setIsSemesterModalVisible] = useState(false);
     
     // Données mockées (fallback uniquement)
@@ -105,9 +108,10 @@ const AcademicPeriodsManager = () => {
             }
         ];
     
-    // Charger les périodes du backend
+    // Charger les périodes et semestres du backend
     useEffect(() => {
         dispatch(fetchAllGradingWindows());
+        dispatch(fetchSemesters());
     }, [dispatch]);
     
     // Mapper les données backend vers le format AcademicPeriod
@@ -124,8 +128,14 @@ const AcademicPeriodsManager = () => {
         order: period.order
     }));
     
-    // Utiliser les données backend ou fallback vers mock
-    const periods = backendPeriods.length > 0 ? backendPeriods : mockPeriods;
+    // Trouver le semestre actif
+    const activeSemester = semesters.find(s => s.active);
+    
+    // Filtrer les périodes par semestre actif
+    const allPeriods = backendPeriods.length > 0 ? backendPeriods : mockPeriods;
+    const periods = activeSemester 
+        ? allPeriods.filter(period => period.semester === activeSemester.id)
+        : allPeriods;
 
     // Générer une année académique standard (9 mois)
     const months = [
@@ -170,6 +180,7 @@ const AcademicPeriodsManager = () => {
         setSelectedPeriod(period);
         setEditedStartDate(period.startDate);
         setEditedEndDate(period.endDate);
+        setEditedIsActive(period.isActive);
         setIsModalVisible(true);
         // Définir la date du calendrier selon la période
         const periodDate = new Date(period.startDate);
@@ -182,6 +193,7 @@ const AcademicPeriodsManager = () => {
         setActiveTab('start');
         setEditedStartDate('');
         setEditedEndDate('');
+        setEditedIsActive(false);
     };
 
     const handleModalConfirm = async () => {
@@ -239,7 +251,7 @@ const AcademicPeriodsManager = () => {
                 startDate: editedStartDate,
                 endDate: editedEndDate,
                 color: selectedPeriod.color,
-                isActive: selectedPeriod.isActive,
+                isActive: editedIsActive,
                 order: selectedPeriod.order
             };
             
@@ -267,6 +279,7 @@ const AcademicPeriodsManager = () => {
         setActiveTab('start');
         setEditedStartDate('');
         setEditedEndDate('');
+        setEditedIsActive(false);
     };
 
     const getCalendarEvents = () => {
@@ -317,13 +330,19 @@ const AcademicPeriodsManager = () => {
             }}>
                 {/* En-tête */}
                 <div style={{ marginBottom: window.innerWidth < 768 ? '16px' : '32px' }}>
-                    <Text type="secondary" style={{ fontSize: window.innerWidth < 768 ? '12px' : '14px' }}>Période en cours</Text>
+                    <Text type="secondary" style={{ fontSize: window.innerWidth < 768 ? '12px' : '14px' }}>Semestre actif</Text>
                     <Title level={window.innerWidth < 768 ? 4 : 3} style={{ color: '#1890ff', margin: '4px 0' }}>
-                        {periods.find(p => p.isActive)?.name || 'Aucune période active'}
+                        {activeSemester?.name || 'Aucun semestre actif'}
                     </Title>
-                    <Text style={{ color: '#666', fontSize: window.innerWidth < 768 ? '12px' : '14px' }}>
-                        {periods.find(p => p.isActive) ? `${formatDate(periods.find(p => p.isActive)!.startDate)} - ${formatDate(periods.find(p => p.isActive)!.endDate)}` : ''}
-                    </Text>
+                    <Text type="secondary" style={{ fontSize: window.innerWidth < 768 ? '12px' : '14px' }}>Période en cours</Text>
+                    <div style={{ color: '#666', fontSize: window.innerWidth < 768 ? '12px' : '14px', marginTop: '4px' }}>
+                        {periods.find(p => p.isActive)?.name || 'Aucune période active'}
+                        {periods.find(p => p.isActive) && (
+                            <span style={{ marginLeft: '8px' }}>
+                                ({formatDate(periods.find(p => p.isActive)!.startDate)} - {formatDate(periods.find(p => p.isActive)!.endDate)})
+                            </span>
+                        )}
+                    </div>
                 </div>
 
                 {/* Timeline Container */}
@@ -566,6 +585,18 @@ const AcademicPeriodsManager = () => {
                 ]}
                 width={800}
             >
+                <div style={{ marginBottom: '24px', padding: '16px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+                    <Space align="center">
+                        <span style={{ fontWeight: 500 }}>Période active :</span>
+                        <Switch 
+                            checked={editedIsActive}
+                            onChange={setEditedIsActive}
+                            checkedChildren="Actif"
+                            unCheckedChildren="Inactif"
+                        />
+                    </Space>
+                </div>
+                
                 <Tabs activeKey={activeTab} onChange={setActiveTab}>
                     <Tabs.TabPane tab="Date de début" key="start">
                         <div style={{ marginBottom: '16px' }}>

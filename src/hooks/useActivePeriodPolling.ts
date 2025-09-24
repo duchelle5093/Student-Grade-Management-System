@@ -71,7 +71,12 @@ export const useActivePeriodPolling = ({
 
     // Mapper la période vers les colonnes éditables
     const getEditableColumns = (periodShortName?: string): string[] => {
-        if (!periodShortName) return ["cc1"]; // Fallback vers CC1 si aucune période active
+        console.log('DEBUG - getEditableColumns called with:', periodShortName);
+        
+        if (!periodShortName) {
+            console.log('DEBUG - No periodShortName, returning fallback ["cc1"]');
+            return ["cc1"]; // Fallback vers CC1 si aucune période active
+        }
         
         const mapping: Record<string, string[]> = {
             "CC_1": ["cc1"],
@@ -80,14 +85,25 @@ export const useActivePeriodPolling = ({
             "SN_2": ["sn2"]
         };
         
-        return mapping[periodShortName] || ["cc1"]; // Fallback vers CC1 si période inconnue
+        const result = mapping[periodShortName] || ["cc1"];
+        console.log('DEBUG - Mapping result:', { periodShortName, result, availableKeys: Object.keys(mapping) });
+        
+        return result; // Fallback vers CC1 si période inconnue
     };
 
+    const editableColumns = getEditableColumns(activePeriod?.shortName);
+    
+    console.log('DEBUG - useActivePeriodPolling return:', {
+        activePeriod,
+        editableColumns,
+        activePeriodShortName: activePeriod?.shortName
+    });
+    
     return {
         activePeriod,
         loading,
         refreshPeriod,
-        editableColumns: getEditableColumns(activePeriod?.shortName),
+        editableColumns,
         isPollingEnabled: enabled && !!intervalRef.current
     };
 };

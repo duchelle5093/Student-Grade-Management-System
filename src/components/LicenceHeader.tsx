@@ -3,8 +3,8 @@ interface LicenceHeaderProps {
   topic?: string;
   code?: string;
   level: string;
-  NC: string;
-  CANT: string;
+  successRate: number;
+  daysRemaining: number;
   title?: string;
   studentCount?: number;
   claimsCount?: number;
@@ -15,8 +15,8 @@ export const GradesHeader = ({
   topic,
   code,
   level,
-  NC,
-  CANT,
+  successRate,
+  daysRemaining,
   title,
   studentCount,
   claimsCount = 0,
@@ -53,13 +53,21 @@ export const GradesHeader = ({
         </div>
         
         <div className="bg-green-50 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-green-600">{NC}</div>
-          <div className="text-sm text-gray-500">Note sur</div>
+          <div className="text-2xl font-bold text-green-600">{successRate}%</div>
+          <div className="text-sm text-gray-500">Taux réussite</div>
         </div>
         
-        <div className="bg-blue-50 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-blue-600">{CANT}</div>
-          <div className="text-sm text-gray-500">Contrôle sur</div>
+        <div className={`rounded-lg p-4 text-center ${
+          daysRemaining > 7 ? 'bg-blue-50' : 
+          daysRemaining > 3 ? 'bg-orange-50' : 'bg-red-50'
+        }`}>
+          <div className={`text-2xl font-bold ${
+            daysRemaining > 7 ? 'text-blue-600' : 
+            daysRemaining > 3 ? 'text-orange-600' : 'text-red-600'
+          }`}>
+            {daysRemaining > 0 ? daysRemaining : 0}
+          </div>
+          <div className="text-sm text-gray-500">Jours restants</div>
         </div>
       </div>
     </div>

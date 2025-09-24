@@ -199,6 +199,7 @@ export const TeacherGradesTable = ({
                 // Seul le polling détermine les colonnes éditables
                 const currentEditableColumns = Array.isArray(pollingEditableColumns) ? pollingEditableColumns : [];
                 
+
                 if (isEditable && currentEditableColumns.includes(field)) {
                     const periodMap: Record<string, string> = {
                         cc1: "CC_1", sn1: "SN_1", cc2: "CC_2", sn2: "SN_2"
@@ -319,7 +320,6 @@ export const TeacherGradesTable = ({
                     </Tag>
                 </div>
             )}
-
             <Table
                 columns={columns}
                 dataSource={data}

@@ -11,12 +11,13 @@ import {
     parsePeriodLabel, 
     isValidGradeValue,
     getMaxGradeValue 
-} from "../utils/periodUtils";
+} from "../utils";
 import { translatePeriodName } from "../utils/periodTranslation";
+import { calculateSuccessRate, calculateDaysRemaining } from "../utils/statsUtils";
 import { fetchStudents } from "../features/user/actions";
 import { fetchTeacherGrades, createGrade, updateGrade } from "../features/grades";
 import { fetchAssignedSubjects } from "../features/subjects";
-import { fetchActiveSemester } from "../features/semesters";
+
 import { AcademicLevel } from "../api/enums";
 import { CreateGradeReqDto, UpdateGradeReqDto } from "../api/reponse-dto/grade.res.dto";
 import { useNotification } from "../contexts";
@@ -37,10 +38,12 @@ interface GradeManagementProps {
 }
 
 export const GradeManagement = ({ level, levelName, levelCode }: GradeManagementProps) => {
+    console.log('DEBUG - GradeManagement component rendered for level:', levelName);
     const dispatch = useAppDispatch();
     const { notify } = useNotification();
-    const { activeSemester } = useAppSelector((s) => s.semesters);
+
     const { teacherGrades } = useAppSelector((s) => s.grades);
+    const { activeSemester } = useAppSelector((s) => s.semesters);
     const user = useAppSelector((s) => s.user.profile);
 
     const { activePeriod, editableColumns } = useActivePeriodPolling({ enabled: true, interval: 60000 }); // 1 minute au lieu de 10s
@@ -118,6 +121,31 @@ export const GradeManagement = ({ level, levelName, levelCode }: GradeManagement
         );
     }, [mergedRows, searchValue]);
 
+    // Calcul du taux de réussite
+    const successRate = useMemo(() => {
+        if (!mergedRows?.length) return 0;
+        
+        const studentsWithGrades = mergedRows.filter(student => {
+            const hasAnyGrade = [student.cc1, student.sn1, student.cc2, student.sn2]
+                .some(grade => grade !== null && grade !== undefined && grade >= 10); // Seuil de réussite à 10
+            return hasAnyGrade;
+        });
+        
+        return Math.round((studentsWithGrades.length / mergedRows.length) * 100);
+    }, [mergedRows]);
+
+    // Calcul des jours restants
+    const daysRemaining = useMemo(() => {
+        if (!activePeriod?.endDate) return 0;
+        
+        const today = new Date();
+        const endDate = new Date(activePeriod.endDate);
+        const diffTime = endDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        return Math.max(0, diffDays);
+    }, [activePeriod?.endDate]);
+
     const handleEdit = () => {
         setEditedData(displayRows || []);
         setIsTableEditable(true);
@@ -170,7 +198,7 @@ export const GradeManagement = ({ level, levelName, levelCode }: GradeManagement
                     payloads.push({
                         studentId: row.studentId,
                         subjectId: selectedSubject.id,
-                        semesterId: activeSemester?.id || semester,
+                        semesterId: activeSemester?.id || 1,
                         value,
                         maxValue: getMaxGradeValue(currentPeriodLabel),
                         type: currentPeriodLabel as any,
@@ -229,7 +257,7 @@ export const GradeManagement = ({ level, levelName, levelCode }: GradeManagement
         dispatch(fetchAssignedSubjects());
         dispatch(fetchTeacherGrades());
         dispatch(fetchStudents());
-        dispatch(fetchActiveSemester());
+       // dispatch(fetchActiveSemester());
     }, [dispatch]);
 
     if (teacherSubjectsForLevel.length === 0) {
@@ -267,8 +295,8 @@ export const GradeManagement = ({ level, levelName, levelCode }: GradeManagement
                 topic={selectedSubject?.name || "Matière"}
                 code={selectedSubject?.code || "CODE"}
                 level={levelName}
-                NC="10"
-                CANT="10"
+                successRate={successRate}
+                daysRemaining={daysRemaining}
                 studentCount={filteredStudents.length}
                 claimsCount={getAllPendingClaimsCount()}
             />
